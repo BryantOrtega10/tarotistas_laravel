@@ -29,13 +29,13 @@ class TarotistasModel extends Model
 
     public function txtEstado(): Attribute {
         return Attribute::make(
-            get: fn () => [0 => "En Registro", 1 => "Esperando aprobación", 2 => "Activado", 3 => "Rechazado"][$this->estado]
+            get: fn () => [1 => "En Registro", 2 => "Esperando aprobación", 3 => "Activado", 4 => "Rechazado"][$this->estado] ?? null
         );
     }
     
     public function txtEstadoConexion(): Attribute {
         return Attribute::make(
-            get: fn () => [0 => "Desconectado", 1 => "Conectado"][$this->estado_conexion]
+            get: fn () => [1 => "Desconectado", 2 => "Conectado"][$this->estado_conexion] ?? null
         );
     }
     

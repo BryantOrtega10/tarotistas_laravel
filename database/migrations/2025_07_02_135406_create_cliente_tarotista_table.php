@@ -23,7 +23,6 @@ return new class extends Migration
             $table->bigInteger("fk_tarotista")->unsigned();
             $table->foreign('fk_tarotista')->references('id')->on('tarotistas');
             $table->index('fk_tarotista');
-            $table->timestamps();
         });
     }
 

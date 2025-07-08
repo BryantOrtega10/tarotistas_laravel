@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Api\Tarotista;
+namespace App\Http\Requests\Api\Tarotista\Perfil;
 
-use App\Http\Requests\Api\ApiRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
-class RegistroRequest extends ApiRequest
+class CompletarCuentaTarotistaRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,10 +22,9 @@ class RegistroRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'nombre' => 'required',
-            'email' => 'required|unique:users,email',
-            'password' => 'required',
-            'repeatPassword' => 'required|same:password',
+            'tipoCuenta' => 'nullable',
+            'cuenta' => 'required',
+            'banco' => 'required',
         ];
     }
 }

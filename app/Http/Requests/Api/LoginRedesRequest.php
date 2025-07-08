@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class LoginRedesRequest extends FormRequest
+class LoginRedesRequest extends ApiRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,8 +22,9 @@ class LoginRedesRequest extends FormRequest
         return [
             'name' => 'nullable',
             'email' => 'required',
-            'provider_id' => 'required', 
+            'provider_id' => 'required',
             'provider' => 'required',
         ];
     }
+
 }

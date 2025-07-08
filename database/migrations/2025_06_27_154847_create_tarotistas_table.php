@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string("nombre");
             $table->string("descripcion_corta")->nullable();
-            $table->tinyInteger("estado")->default(0)->nullable()->comment("0 - En Registro, 1 - Esperando aprobación, 2 - Activado, 3 - Rechazado");
-            $table->tinyInteger("estado_conexion")->default(0)->nullable()->comment("0 - Desconectado, 1 - Conectado, 2 - En Llamada");
+            $table->tinyInteger("estado")->default(1)->nullable()->comment("1 - En Registro, 2 - Esperando aprobación, 3 - Activado, 4 - Rechazado");
+            $table->tinyInteger("estado_conexion")->default(1)->nullable()->comment("1 - Desconectado, 2 - Conectado, 3 - En Llamada");
             $table->string("horario")->nullable();
             $table->string("anios_exp")->nullable();
             $table->decimal("calificacion")->nullable()->comment("Se actualiza con un trigger");

@@ -15,19 +15,16 @@ return new class extends Migration
             $table->id();
             $table->string("nombre");
             $table->string("bandera");
-            $table->timestamps();
         });
 
         Schema::create('bancos', function (Blueprint $table) {
             $table->id();
             $table->string("nombre");
-            $table->string("ap_tipo_cuenta");
+            $table->boolean("ap_tipo_cuenta")->default(0);
             
             $table->bigInteger("fk_pais")->unsigned();
             $table->foreign('fk_pais')->references('id')->on('paises');
             $table->index('fk_pais');
-
-            $table->timestamps();
         });
     }
 

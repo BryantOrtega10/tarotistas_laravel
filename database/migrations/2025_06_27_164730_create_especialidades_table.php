@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('especialidades', function (Blueprint $table) {
             $table->id();
             $table->string("nombre");
-            $table->timestamps();
         });
 
         Schema::create('especialidad_tarotista', function (Blueprint $table) {

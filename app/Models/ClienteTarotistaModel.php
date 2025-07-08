@@ -8,6 +8,8 @@ class ClienteTarotistaModel extends Model
 {
     protected $table = 'cliente_tarotista';
 
+    public $timestamps = false;
+    
     protected $fillable = [
         'mensajes_gratis',
         'fk_cliente',

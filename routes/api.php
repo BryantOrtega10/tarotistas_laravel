@@ -1,21 +1,31 @@
 <?php
 
-use App\Http\Controllers\Api\ClienteController;
-use App\Http\Controllers\Api\TarotistaController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\EspecialidadesController;
+use App\Http\Controllers\Api\PaisesController;
+use App\Http\Controllers\Api\Tarotista\BancosController;
+use App\Http\Controllers\Api\Tarotista\LoginTarotistaController;
+use App\Http\Controllers\Api\Tarotista\PerfilTarotistaController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
 Route::group(["prefix" => "tarotista"], function () {
-    Route::post("/registro", [TarotistaController::class, 'registroEmail']);
-    Route::post("/login", [TarotistaController::class, 'login']);
-    Route::post("/login-redes", [TarotistaController::class, 'loginRedes']);
+    Route::post("/registro", [LoginTarotistaController::class, 'registroEmail']);
+    Route::post("/login", [LoginTarotistaController::class, 'login']);
+    Route::post("/login-redes", [LoginTarotistaController::class, 'loginRedes']);
+
+    Route::group(["prefix" => "/", "middleware" => ["auth:sanctum","load.tarotista"]], function () {
+        Route::post("/completar-perfil", [PerfilTarotistaController::class, 'completarPerfil']);
+        Route::post("/completar-cuenta", [PerfilTarotistaController::class, 'completarCuenta']);
+
+        Route::get("/bancos", [BancosController::class, 'obtenerBancosPorPais']);
+
+
+
+    });   
 });
 
-Route::group(["prefix" => "cliente"], function () {
-    Route::post("/registro", [ClienteController::class, 'registro']);
-    Route::post("/login", [ClienteController::class, 'login']);
-});
+
+Route::get("/especialidades", [EspecialidadesController::class, 'obtenerTodas']);
+Route::get("/paises", [PaisesController::class, 'obtenerTodos']);
+
+
+

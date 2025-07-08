@@ -1,20 +1,17 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Tarotista;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRedesRequest;
 use App\Http\Requests\Api\LoginRequest;
-use App\Http\Requests\Api\Tarotista\RegistroRedesRequest;
 use App\Http\Requests\Api\Tarotista\RegistroRequest;
-use App\Http\Utils\Funciones;
 use App\Models\TarotistasModel;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
-class TarotistaController extends Controller
+class LoginTarotistaController extends Controller
 {
     /**
      * Registro para el tarotista por email y password
@@ -36,6 +33,7 @@ class TarotistaController extends Controller
 
         $tarotista = new TarotistasModel();
         $tarotista->nombre = $request->input("nombre");
+        $tarotista->estado = 1;
         $tarotista->fk_user = $user->id;
         $tarotista->save();
 
@@ -43,8 +41,12 @@ class TarotistaController extends Controller
 
         return response()->json([
             "success" => true,
-            "message" => "Bienvenido ". $user->name,
-            "token" => $token
+            "message" => "Bienvenido " . $user->name,
+            "data" => [
+                "token" => $token,
+                "status" => $tarotista->estado,
+            ]
+
         ]);
     }
 
@@ -79,7 +81,10 @@ class TarotistaController extends Controller
         return response()->json([
             "success" => true,
             "message" => "Bienvenido " . $user->name,
-            "token" => $token
+            "data" => [
+                "token" => $token,
+                "status" => $tarotista->estado,
+            ]
         ], 200);
     }
 
@@ -92,22 +97,21 @@ class TarotistaController extends Controller
      * 
      * @return \Illuminate\Http\JsonResponse
      */
-
     public function loginRedes(LoginRedesRequest $request)
     {
         //TODO: Validar que el provider ID exista en el provider especifico
         $user = User::whereEmail($request->input("email"))->first();
-        if(isset($user)){
-            if($user->provider != $request->input("provider")){
+        if (isset($user)) {
+            if ($user->provider != $request->input("provider")) {
                 return response()->json([
                     "success" => false,
-                    "message" => "Ya has iniciado con otro proveedor, por favor inicia con: ".$user->provider
+                    "message" => "Ya has iniciado con otro proveedor, por favor inicia con: " . $user->provider
                 ], 401);
             }
-            if($user->provider_id != $request->input("provider_id")){
+            if ($user->provider_id != $request->input("provider_id")) {
                 return response()->json([
                     "success" => false,
-                    "message" => "El ID de tu cuenta no coincide con los registrados: ".$user->provider
+                    "message" => "El ID de tu cuenta no coincide con los registrados: " . $user->provider
                 ], 401);
             }
             $tarotista = TarotistasModel::where("fk_user", "=", $user->id)->first();
@@ -117,17 +121,19 @@ class TarotistaController extends Controller
                     "message" => "Tarotista no encontrado"
                 ], 401);
             }
-        }
-        else{
+        } else {
             $user = new User();
-            $user->name = $request->input("nombre");
+            $user->name = $request->input("name");
             $user->email = $request->input("email");
+            $user->provider = $request->input("provider");
+            $user->provider_id = $request->input("provider_id");
             $user->role = "tarotista";
             $user->password = Hash::make($request->input("password"));
             $user->save();
 
             $tarotista = new TarotistasModel();
-            $tarotista->nombre = $request->input("nombre");
+            $tarotista->nombre = $request->input("name");
+            $tarotista->estado = 1;
             $tarotista->fk_user = $user->id;
             $tarotista->save();
         }
@@ -136,9 +142,10 @@ class TarotistaController extends Controller
         return response()->json([
             "success" => true,
             "message" => "Bienvenido " . $user->name,
-            "token" => $token
+            "data" => [
+                "token" => $token,
+                "status" => $tarotista->estado,
+            ]
         ], 200);
     }
-
-
 }

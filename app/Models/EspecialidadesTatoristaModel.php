@@ -9,6 +9,8 @@ class EspecialidadesTatoristaModel extends Model
     
     protected $table = 'especialidad_tarotista';
 
+    public $timestamps = false;
+
     protected $fillable = [
         'fk_especialidad',
         'fk_tarotista',

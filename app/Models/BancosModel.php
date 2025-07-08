@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class BancosModel extends Model
 {
     protected $table = 'bancos';
+    
+    public $timestamps = false;
 
     protected $fillable = [
         'nombre',

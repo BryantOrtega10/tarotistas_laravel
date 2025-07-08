@@ -8,6 +8,8 @@ class EspecialidadesModel extends Model
 {
     protected $table = 'especialidades';
 
+    public $timestamps = false;
+    
     protected $fillable = [
         'nombre'
     ];
