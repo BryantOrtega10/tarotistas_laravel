@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\LoadClienteMiddleware;
 use App\Http\Middleware\LoadTarotista;
 use App\Http\Middleware\TarotistaApprovedMiddleware;
 use Illuminate\Foundation\Application;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'load.tarotista' => LoadTarotista::class,
             'tarotista.approved' => TarotistaApprovedMiddleware::class,
+            'load.cliente' => LoadClienteMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -35,7 +35,7 @@ class TarotistasModel extends Model
     
     public function txtEstadoConexion(): Attribute {
         return Attribute::make(
-            get: fn () => [1 => "Desconectado", 2 => "Conectado"][$this->estado_conexion] ?? null
+            get: fn () => [1 => "Desconectado", 2 => "En llamada", 3 => "Conectado"][$this->estado_conexion] ?? null
         );
     }
     

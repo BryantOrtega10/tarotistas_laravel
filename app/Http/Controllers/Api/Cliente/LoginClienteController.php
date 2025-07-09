@@ -1,22 +1,22 @@
 <?php
 
-namespace App\Http\Controllers\Api\Tarotista;
+namespace App\Http\Controllers\Api\Cliente;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRedesRequest;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegistroRequest;
-use App\Models\TarotistasModel;
+use App\Models\ClientesModel;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
-
-class LoginTarotistaController extends Controller
+class LoginClienteController extends Controller
 {
     /**
-     * Registro para el tarotista por email y password
+     * Registro para el cliente por email y password
      * 
      * 
      * @param App\Http\Requests\Api\Tarotista\RegistroRequest $request
@@ -29,15 +29,15 @@ class LoginTarotistaController extends Controller
         $user = new User();
         $user->name = $request->input("nombre");
         $user->email = $request->input("email");
-        $user->role = "tarotista";
+        $user->role = "cliente";
         $user->password = Hash::make($request->input("password"));
         $user->save();
 
-        $tarotista = new TarotistasModel();
-        $tarotista->nombre = $request->input("nombre");
-        $tarotista->estado = 1;
-        $tarotista->fk_user = $user->id;
-        $tarotista->save();
+        $cliente = new ClientesModel();
+        $cliente->nombre = $request->input("nombre");
+        $cliente->fecha_nacimiento = $request->input("fecha_nacimiento");
+        $cliente->fk_user = $user->id;
+        $cliente->save();
 
         $token = $user->createToken("auth_token")->plainTextToken;
 
@@ -45,15 +45,14 @@ class LoginTarotistaController extends Controller
             "success" => true,
             "message" => "Bienvenido " . $user->name,
             "data" => [
-                "token" => $token,
-                "status" => $tarotista->estado,
+                "token" => $token
             ]
 
         ]);
     }
 
     /**
-     * Login para el tarotista por usuario y password
+     * Login para el cliente por usuario y password
      * 
      * 
      * @param App\Http\Requests\Api\LoginRequest $request
@@ -71,28 +70,28 @@ class LoginTarotistaController extends Controller
         }
 
         $user = User::whereEmail($request->input("email"))->first();
-        $tarotista = TarotistasModel::where("fk_user", "=", $user->id)->first();
-        if (!isset($tarotista)) {
+        $cliente = ClientesModel::where("fk_user", "=", $user->id)->first();
+        if (!isset($cliente)) {
             return response()->json([
                 "success" => false,
-                "message" => "Tarotista no encontrado"
+                "message" => "Cliente no encontrado"
             ], 401);
         }
 
         $token = $user->createToken("auth_token")->plainTextToken;
+
         return response()->json([
             "success" => true,
             "message" => "Bienvenido " . $user->name,
             "data" => [
-                "token" => $token,
-                "status" => $tarotista->estado,
+                "token" => $token
             ]
         ], 200);
     }
 
 
     /**
-     * Login para el tarotista por un provider Google, Facebook, etc.
+     * Login para el cliente por un provider Google, Facebook, etc.
      * 
      * 
      * @param App\Http\Requests\Api\LoginRedesRequest $request
@@ -116,37 +115,37 @@ class LoginTarotistaController extends Controller
                     "message" => "El ID de tu cuenta no coincide con los registrados: " . $user->provider
                 ], 401);
             }
-            $tarotista = TarotistasModel::where("fk_user", "=", $user->id)->first();
-            if (!isset($tarotista)) {
+            $cliente = ClientesModel::where("fk_user", "=", $user->id)->first();
+            if (!isset($cliente)) {
                 return response()->json([
                     "success" => false,
-                    "message" => "Tarotista no encontrado"
+                    "message" => "Cliente no encontrado"
                 ], 401);
             }
         } else {
             $user = new User();
-            $user->name = $request->input("name");
+            $user->name = $request->input("nombre");
             $user->email = $request->input("email");
             $user->provider = $request->input("provider");
             $user->provider_id = $request->input("provider_id");
-            $user->role = "tarotista";
+            $user->role = "cliente";
             $user->password = Hash::make(Str::random(8));
             $user->save();
 
-            $tarotista = new TarotistasModel();
-            $tarotista->nombre = $request->input("name");
-            $tarotista->estado = 1;
-            $tarotista->fk_user = $user->id;
-            $tarotista->save();
+            $cliente = new ClientesModel();
+            $cliente->nombre = $request->input("nombre");
+            $cliente->fecha_nacimiento = $request->input("fecha_nacimiento");
+            $cliente->fk_user = $user->id;
+            $cliente->save();
         }
 
         $token = $user->createToken("auth_token")->plainTextToken;
+        
         return response()->json([
             "success" => true,
             "message" => "Bienvenido " . $user->name,
             "data" => [
-                "token" => $token,
-                "status" => $tarotista->estado,
+                "token" => $token
             ]
         ], 200);
     }

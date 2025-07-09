@@ -2,35 +2,34 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\TarotistasModel;
+use App\Models\ClientesModel;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class LoadTarotista
+class LoadClienteMiddleware
 {
     /**
-     * Handle an incoming request. 
-     * Agregar tarotista al request
+     * Handle an incoming request.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        $user = $request->user(); 
 
         if ($user) {
-            $tarotista = TarotistasModel::where("fk_user", "=", $user->id)->first();
-            if (!isset($tarotista)) {
+            $cliente = ClientesModel::where("fk_user","=",$user->id)->first();
+            if (!isset($cliente)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'El usuario no es un tarotista',
+                    'message' => 'El usuario no es un cliente',
                     'errors' => [
-                        'estado' => 'El usuario no es un tarotista'
+                        'estado' => 'El usuario no es un cliente'
                     ],
                 ], 422);
             }
-            $request->attributes->set('tarotista', $tarotista);
+            $request->attributes->set('cliente', $cliente);
         }
 
         return $next($request);

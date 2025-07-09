@@ -24,6 +24,7 @@ class LoginRedesRequest extends ApiRequest
             'email' => 'required',
             'provider_id' => 'required',
             'provider' => 'required',
+            'fecha_nacimiento' => 'nullable'
         ];
     }
 

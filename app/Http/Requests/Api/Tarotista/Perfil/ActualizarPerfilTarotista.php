@@ -23,6 +23,8 @@ class ActualizarPerfilTarotista extends ApiRequest
     public function rules(): array
     {
         return [
+            'nombre' => 'nullable',
+            'photo' => 'nullable',
             'descripcionCorta' => 'nullable',
             'horarioInicio' => 'nullable',
             'horarioFin' => 'nullable',

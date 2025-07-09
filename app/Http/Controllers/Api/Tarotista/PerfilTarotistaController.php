@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Tarotista\Perfil\ActualizarPerfilTarotista;
 use App\Http\Requests\Api\Tarotista\Perfil\CompletarCuentaTarotistaRequest;
 use App\Http\Requests\Api\Tarotista\Perfil\CompletarPerfilTarotistaRequest;
+use App\Http\Utils\Funciones;
 use App\Models\EspecialidadesModel;
 use App\Models\EspecialidadesTatoristaModel;
 use Illuminate\Http\Request;
@@ -120,7 +121,7 @@ class PerfilTarotistaController extends Controller
      */
     public function estadoConexion(int $status, Request $request)
     {
-        $validStatus = [1, 2];
+        $validStatus = [1, 3];
         if (!in_array($status, $validStatus)) {
             return  response()->json([
                 "success" => false,
@@ -202,7 +203,7 @@ class PerfilTarotistaController extends Controller
      * 
      * @return \Illuminate\Http\JsonResponse
      */
-    public function obtenerMiPerfil(CompletarCuentaTarotistaRequest $request)
+    public function obtenerMiPerfil(Request $request)
     {
         $tarotista = $request->attributes->get('tarotista');
 
@@ -234,6 +235,19 @@ class PerfilTarotistaController extends Controller
     public function actualizarMiPerfil(ActualizarPerfilTarotista $request)
     {
         $tarotista = $request->attributes->get('tarotista');
+
+        if ($request->filled("nombre")) {
+            $tarotista->user->name = $request->input("nombre");
+            $tarotista->nombre = $request->input("nombre");
+            $tarotista->user->save();
+        }
+        if ($request->filled("photo")) {
+            $folder = "users/";
+            $file_name =  uniqid() . "_user.png";
+            Funciones::imagenBase64($request->filled("photo"), $folder.$file_name);
+            $tarotista->user->photo = $file_name;
+            $tarotista->user->save();
+        }
 
         if ($request->filled("descripcionCorta")) {
             $tarotista->descripcion_corta = $request->input("descripcionCorta");

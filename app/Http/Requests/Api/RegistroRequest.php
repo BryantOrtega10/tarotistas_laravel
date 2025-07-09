@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Api\Cliente;
+namespace App\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\Api\ApiRequest;
 
-class RegistroClienteRequest extends FormRequest
+class RegistroRequest extends ApiRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,12 +23,11 @@ class RegistroClienteRequest extends FormRequest
     {
         return [
             'nombre' => 'required',
-            'fechaNacimiento' => 'nullable|date',
             'email' => 'required|unique:users,email',
-            'password' => 'required_without:tokenAuth',
-            'repeatPassword' => 'required_without:tokenAuth|same:password',
-            'tokenAuth' => 'required_without:password',
-            'authProvider' => 'required_without:password',
+            'password' => 'required',
+            'repeatPassword' => 'required|same:password',
+            'fecha_nacimiento' => 'nullable'
+
         ];
     }
 }

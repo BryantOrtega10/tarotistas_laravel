@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Api\Tarotista;
+namespace App\Http\Requests\Api\Cliente\Chat;
 
 use App\Http\Requests\Api\ApiRequest;
 
-class RegistroRequest extends ApiRequest
+
+class EnviarChatClienteRequest extends ApiRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,10 +23,7 @@ class RegistroRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'nombre' => 'required',
-            'email' => 'required|unique:users,email',
-            'password' => 'required',
-            'repeatPassword' => 'required|same:password',
+            'mensaje' => 'required'
         ];
     }
 }
