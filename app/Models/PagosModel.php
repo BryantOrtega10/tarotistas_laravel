@@ -24,4 +24,7 @@ class PagosModel extends Model
         return $this->belongsTo(TarotistasModel::class, "fk_tarotista", "id");
     }
 
+    public function llamadas(){
+        return $this->hasMany(LlamadasModel::class, "fk_pago", "id");
+    }
 }

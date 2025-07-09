@@ -3,9 +3,11 @@
 use App\Http\Controllers\Api\EspecialidadesController;
 use App\Http\Controllers\Api\PaisesController;
 use App\Http\Controllers\Api\Tarotista\BancosController;
+use App\Http\Controllers\Api\Tarotista\CalificacionesTarotistaController;
 use App\Http\Controllers\Api\Tarotista\ChatsTarotistaController;
 use App\Http\Controllers\Api\Tarotista\ComentariosTarotistaController;
 use App\Http\Controllers\Api\Tarotista\LoginTarotistaController;
+use App\Http\Controllers\Api\Tarotista\PagosTarotistaController;
 use App\Http\Controllers\Api\Tarotista\PerfilTarotistaController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,7 +37,23 @@ Route::group(["prefix" => "tarotista"], function () {
                 Route::post('/{id}/responder',[ComentariosTarotistaController::class, 'responderComentarioId']);
             });
 
+            Route::group(["prefix" => "/calificaciones"], function () {
+                Route::get('/',[CalificacionesTarotistaController::class, 'obtenerCalificaciones']);
+            });
 
+            Route::group(["prefix" => "/mi-perfil"], function () {
+                Route::get('/',[PerfilTarotistaController::class, 'obtenerMiPerfil']);
+                Route::post('/',[PerfilTarotistaController::class, 'actualizarMiPerfil']);
+
+                Route::get('/cuenta',[PerfilTarotistaController::class, 'obtenerMiCuenta']);
+                Route::post('/cuenta',[PerfilTarotistaController::class, 'modificarMiCuenta']);
+            });
+
+            Route::group(["prefix" => "/pagos"], function () {
+                Route::get('/',[PagosTarotistaController::class, 'obtenerPagos']);
+                Route::get('/resumen',[PagosTarotistaController::class, 'obtenerResumen']);
+                Route::get('/unico/{id}',[PagosTarotistaController::class, 'obtenerPagoxId']);
+            });
         });
     });   
 });
