@@ -90,8 +90,7 @@ class PerfilTarotistaController extends Controller
 
         if ($request->filled("tipoCuenta")) {
             $tarotista->tipo_cuenta = $request->input("tipoCuenta");
-        }
-        else{
+        } else {
             $tarotista->tipo_cuenta = null;
         }
         $tarotista->cuenta = $request->input("cuenta");
@@ -106,6 +105,40 @@ class PerfilTarotistaController extends Controller
                 "status" => $tarotista->estado,
             ]
 
+        ]);
+    }
+
+    /**
+     * Sirve para modificar los datos de la cuenta a la que se le va a pagar al tarotista.
+     * 
+     * @param int $status
+     * @param App\Http\Requests\Api\Tarotista\Perfil\CompletarCuentaTarotistaRequest $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function estadoConexion(int $status, Request $request)
+    {
+        $validStatus = [1, 2];
+        if (!in_array($status, $validStatus)) {
+            return  response()->json([
+                "success" => false,
+                "message" => "Estado no valido",
+                "errors" => [
+                    "conexion_status" => 'Estado no valido',
+                ]
+            ], 422);
+        }
+        
+        $tarotista = $request->attributes->get('tarotista');
+        $tarotista->estado_conexion = $status;
+        $tarotista->save();
+
+        return response()->json([
+            "success" => true,
+            "message" => "Estado de conexión actualizado correctamente",
+            "data" => [
+                "conexion_status" => $tarotista->estado_conexion,
+            ]
         ]);
     }
 }
