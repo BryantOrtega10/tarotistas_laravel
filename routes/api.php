@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Cliente\ChatClienteController;
 use App\Http\Controllers\Api\Cliente\CobrosController;
 use App\Http\Controllers\Api\Cliente\ConsultaTarotistasController;
+use App\Http\Controllers\Api\Cliente\LlamadaClienteController;
 use App\Http\Controllers\Api\Cliente\LoginClienteController;
 use App\Http\Controllers\Api\Cliente\PerfilClienteController;
 use App\Http\Controllers\Api\EspecialidadesController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Api\Tarotista\BancosController;
 use App\Http\Controllers\Api\Tarotista\CalificacionesTarotistaController;
 use App\Http\Controllers\Api\Tarotista\ChatsTarotistaController;
 use App\Http\Controllers\Api\Tarotista\ComentariosTarotistaController;
+use App\Http\Controllers\Api\Tarotista\LlamadaTarotistaController;
 use App\Http\Controllers\Api\Tarotista\LoginTarotistaController;
 use App\Http\Controllers\Api\Tarotista\PagosTarotistaController;
 use App\Http\Controllers\Api\Tarotista\PerfilTarotistaController;
@@ -59,6 +61,12 @@ Route::group(["prefix" => "tarotista"], function () {
                 Route::get('/resumen', [PagosTarotistaController::class, 'obtenerResumen']);
                 Route::get('/unico/{id}', [PagosTarotistaController::class, 'obtenerPagoxId']);
             });
+
+            Route::group(["prefix" => "/llamada", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
+                Route::post('/aceptar/{idLlamada}', [LlamadaTarotistaController::class, 'aceptar']);
+                Route::post('/finalizar/{idLlamada}', [LlamadaTarotistaController::class, 'finalizar']);
+                Route::get('/detalle/{idLlamada}', [LlamadaTarotistaController::class, 'detalle']);
+            });
         });
     });
 });
@@ -85,11 +93,19 @@ Route::group(["prefix" => "cliente"], function () {
     Route::group(["prefix" => "/mi-perfil", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
         Route::get('/', [PerfilClienteController::class, 'obtenerMiPerfil']);
         Route::post('/', [PerfilClienteController::class, 'actualizarMiPerfil']);
+        Route::get('/medio-pago', [PerfilClienteController::class, 'obtenerMedioPago']);
     });
 
     Route::group(["prefix" => "/cobros", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
         Route::get('/', [CobrosController::class, 'obtenerCobros']);
         Route::get('/{id}', [CobrosController::class, 'obtenerCobrosxId']);
+    });
+
+    Route::group(["prefix" => "/llamada", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
+        Route::post('/solicitar/{idRelacion}', [LlamadaClienteController::class, 'solicitar']);
+        Route::post('/cancelar/{idLlamada}', [LlamadaClienteController::class, 'cancelar']);
+        Route::post('/finalizar/{idLlamada}', [LlamadaClienteController::class, 'finalizar']);
+        Route::post('/calificar/{idLlamada}', [LlamadaClienteController::class, 'calificar']);
     });
 });
 

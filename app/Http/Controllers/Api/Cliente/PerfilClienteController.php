@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 
 class PerfilClienteController extends Controller
 {
-     /**
+    /**
      * Sirve para obtener los datos básicos del cliente
      * 
      * @param Illuminate\Http\Request $request
@@ -64,4 +64,27 @@ class PerfilClienteController extends Controller
             "data" => []
         ]);
     }
+
+    /**
+     * Sirve para obtener los datos del medio de pago del cliente
+     * 
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function obtenerMedioPago(Request $request)
+    {
+        $cliente = $request->attributes->get('cliente');
+        //TODO: Conexion con SDK Braintree Paypal para obtener el detalle de un medio de pago
+        $medioPago = $cliente->token_payu !== null;
+
+        return response()->json([
+            "success" => true,
+            "message" => "Datos del medio de pago consultados correctamente",
+            "data" => [
+                "tieneMedioPago" => $medioPago
+            ]
+        ]);
+    }
+    
 }

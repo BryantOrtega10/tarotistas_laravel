@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Tarotista;
 
+use App\Events\NuevoMensajeEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Tarotista\Chats\EnviarChatRequest;
 use App\Models\ChatsModel;
@@ -146,7 +147,9 @@ class ChatsTarotistaController extends Controller
         $chat->save();
 
         //TODO: Enviar notificacion push al cliente
-
+        $user = $request->user(); 
+        broadcast(new NuevoMensajeEvent($chat, $user->id))->toOthers();
+        
         return response()->json([
             "success" => true,
             "message" => "Mensaje agregado correctamente",
