@@ -3,6 +3,7 @@
 use App\Http\Middleware\LoadClienteMiddleware;
 use App\Http\Middleware\LoadTarotista;
 use App\Http\Middleware\TarotistaApprovedMiddleware;
+use App\Http\Middleware\UserRoleMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
+            'user-role' => UserRoleMiddleware::class,
             'load.tarotista' => LoadTarotista::class,
             'tarotista.approved' => TarotistaApprovedMiddleware::class,
             'load.cliente' => LoadClienteMiddleware::class,

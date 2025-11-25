@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\BancosModel;
+use App\Models\PaisesModel;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,7 +17,11 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserAdminSeeder::class,
-            ConfigDefaultSeeder::class
+            ConfigDefaultSeeder::class,
+            EspecialidadesSeeder::class,
+            PaisesSeeder::class,
+            BancosSeeder::class,
+            TarotistasPruebaSeeder::class,
         ]);
       
     }

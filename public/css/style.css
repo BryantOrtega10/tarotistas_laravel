@@ -1,0 +1,7 @@
+.min-w-100 th {
+    white-space: nowrap;
+}
+
+.min-w-100 {
+    min-width: 100%;
+}
