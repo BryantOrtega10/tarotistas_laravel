@@ -22,6 +22,7 @@ class LoginRequest extends ApiRequest
         return [
             'email' => 'required',
             'password' => 'required',
+            'tokenPush' => 'nullable'
         ];
     }
 }

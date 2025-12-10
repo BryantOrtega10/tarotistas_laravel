@@ -26,8 +26,9 @@ class RegistroRequest extends ApiRequest
             'email' => 'required|unique:users,email',
             'password' => 'required',
             'repeatPassword' => 'required|same:password',
-            'fecha_nacimiento' => 'nullable'
-
+            'fecha_nacimiento' => 'nullable',
+            'image' => 'nullable|image',
+            'tokenPush' => 'nullable'
         ];
     }
 }

@@ -31,6 +31,7 @@ class LoginClienteController extends Controller
         $user->email = $request->input("email");
         $user->role = "cliente";
         $user->password = Hash::make($request->input("password"));
+        $user->token_push = $request->input("tokenPush");
         $user->save();
 
         $cliente = new ClientesModel();
@@ -45,7 +46,14 @@ class LoginClienteController extends Controller
             "success" => true,
             "message" => "Bienvenido " . $user->name,
             "data" => [
-                "token" => $token
+                "token" => $token,
+                "user" => [
+                    "id" => $user->id,
+                    "name" => $user->name,
+                    "email" => $user->email,
+                    "photo" => $user->photo,
+                    "fecha_nacimiento" => $cliente->fecha_nacimiento
+                ]
             ]
 
         ]);
@@ -66,16 +74,19 @@ class LoginClienteController extends Controller
             return response()->json([
                 "success" => false,
                 "message" => "Correo o contraseña incorrectos"
-            ], 401);
+            ], 422);
         }
 
         $user = User::whereEmail($request->input("email"))->first();
+        $user->token_push = $request->input("tokenPush");
+        $user->save();
+
         $cliente = ClientesModel::where("fk_user", "=", $user->id)->first();
         if (!isset($cliente)) {
             return response()->json([
                 "success" => false,
                 "message" => "Cliente no encontrado"
-            ], 401);
+            ], 422);
         }
 
         $token = $user->createToken("auth_token")->plainTextToken;
@@ -84,7 +95,14 @@ class LoginClienteController extends Controller
             "success" => true,
             "message" => "Bienvenido " . $user->name,
             "data" => [
-                "token" => $token
+                "token" => $token,
+                "user" => [
+                    "id" => $user->id,
+                    "name" => $user->name,
+                    "email" => $user->email,
+                    "photo" => $user->photo,
+                    "fecha_nacimiento" => $cliente->fecha_nacimiento
+                ]
             ]
         ], 200);
     }
@@ -107,24 +125,24 @@ class LoginClienteController extends Controller
                 return response()->json([
                     "success" => false,
                     "message" => "Ya has iniciado con otro proveedor, por favor inicia con: " . $user->provider
-                ], 401);
+                ], 422);
             }
             if ($user->provider_id != $request->input("provider_id")) {
                 return response()->json([
                     "success" => false,
                     "message" => "El ID de tu cuenta no coincide con los registrados: " . $user->provider
-                ], 401);
+                ], 422);
             }
             $cliente = ClientesModel::where("fk_user", "=", $user->id)->first();
             if (!isset($cliente)) {
                 return response()->json([
                     "success" => false,
                     "message" => "Cliente no encontrado"
-                ], 401);
+                ], 422);
             }
         } else {
             $user = new User();
-            $user->name = $request->input("nombre");
+            $user->name = $request->input("name");
             $user->email = $request->input("email");
             $user->provider = $request->input("provider");
             $user->provider_id = $request->input("provider_id");
@@ -133,19 +151,28 @@ class LoginClienteController extends Controller
             $user->save();
 
             $cliente = new ClientesModel();
-            $cliente->nombre = $request->input("nombre");
+            $cliente->nombre = $request->input("name");
             $cliente->fecha_nacimiento = $request->input("fecha_nacimiento");
             $cliente->fk_user = $user->id;
             $cliente->save();
         }
 
         $token = $user->createToken("auth_token")->plainTextToken;
-        
+        $user->token_push = $request->input("tokenPush");
+        $user->save();
+
         return response()->json([
             "success" => true,
             "message" => "Bienvenido " . $user->name,
             "data" => [
-                "token" => $token
+                "token" => $token,
+                "user" => [
+                    "id" => $user->id,
+                    "name" => $user->name,
+                    "email" => $user->email,
+                    "photo" => $user->photo,
+                    "fecha_nacimiento" => $cliente->fecha_nacimiento
+                ]
             ]
         ], 200);
     }

@@ -23,16 +23,19 @@ class ConsultaTarotistasController extends Controller
     {
         $skip = $request->input("skip", 0);
         $take = $request->input("take", 10);
-
-        $tarotistas = TarotistasModel::with(["user: id,name,photo"])
+        
+        $tarotistas = TarotistasModel::with(["user:id,name,photo"])
             ->where("estado", "=", "3")
             ->orderBy("estado_conexion", "desc")
             ->orderBy("calificacion", "desc")
             ->take($take)
             ->skip($skip)
             ->get();
+        
+        
 
         $idsTarotistas = $tarotistas->pluck('id');
+        
 
         $resenas = LlamadasModel::select(DB::raw("COUNT(*) as cuenta_resenas"), "cliente_tarotista.fk_tarotista")
             ->join("cliente_tarotista", "cliente_tarotista.id", "=", "llamadas.fk_cliente_tarotista")
@@ -42,23 +45,31 @@ class ConsultaTarotistasController extends Controller
             ->get()
             ->pluck('cuenta_resenas', 'fk_tarotista');
 
+        
 
         $data = $tarotistas->map(function ($tarotista) use ($resenas) {
             $item = new stdClass;
+            $item->id = $tarotista->id;
             $item->nombre = $tarotista->nombre;
-            $item->pais = $tarotista->pais?->bandera ?? null;
+            $item->pais = $tarotista->pais ?? null;
             $item->photo = $tarotista->user->photo;
-            $item->estado_conexion = $tarotista->estado_conexion;
+            $item->estado_conexion = $tarotista->txt_estado_conexion;
             $item->calificacion = $tarotista->calificacion;
             $item->cuentaResenas = $resenas[$tarotista->id] ?? 0;
 
             return $item;
         })->values();
 
+        $totalTarotistas = TarotistasModel::with(["user: id,name,photo"])
+            ->where("estado", "=", "3")
+            ->count();
+
+
         return response()->json([
             "success" => true,
             "message" => "Tarotistas consultados correctamente",
-            "data" => $data
+            "data" => $data,
+            "total" => $totalTarotistas
         ]);
     }
 
@@ -71,9 +82,9 @@ class ConsultaTarotistasController extends Controller
      */
     public function obtenerTarotistaxId(int $id) {
 
-        $tarotista = TarotistasModel::with(["user: id,name,photo"])
+        $tarotista = TarotistasModel::with(["user:id,name,photo"])
             ->where("estado", "=", "3")
-            ->where("id","=",$id)
+            ->where("tarotistas.id","=",$id)
             ->first();
 
         $resumenLlamadas = LlamadasModel::select(DB::raw("SUM(tiempo_mins) as sum_mins"), DB::raw("COUNT(*) as cuenta_resenas"), "cliente_tarotista.fk_tarotista")
@@ -94,9 +105,9 @@ class ConsultaTarotistasController extends Controller
             "data" => [
                 "photo" => $tarotista->user->photo,
                 "nombre" => $tarotista->nombre,
-                "pais" => $tarotista->pais?->bandera,
-                "sum_mins" => $resumenLlamadas->sum_mins ?? 0,
-                "estado_conexion" => $tarotista->estado_conexion,
+                "pais" => $tarotista->pais ?? null,
+                "sum_mins" => number_format($resumenLlamadas->sum_mins ?? 0, 0),
+                "estado_conexion" => $tarotista->txt_estado_conexion,
                 "descripcion_corta" => $tarotista->descripcion_corta,
                 "calificacion" => $tarotista->calificacion,
                 "cuenta_resenas" => $resumenLlamadas->cuenta_resenas ?? 0,
@@ -133,12 +144,19 @@ class ConsultaTarotistasController extends Controller
             ->skip($skip)
             ->get();
 
+        $totalComentarios = LlamadasModel::with(["cliente_tarotista.cliente.user:id,name,photo"])
+        ->where("estado_llamada", "=", 4)
+        ->whereNotNull("comentario")
+        ->whereHas('cliente_tarotista', function ($query) use ($id) {
+            $query->where('fk_tarotista', $id);
+        })
+        ->count();
 
         $data = $comentarios->map(function ($comentario) {
             $item = new stdClass;
             $item->cliente = $comentario->cliente_tarotista->cliente->user;
             $item->calificacion = $comentario->calificacion;
-            $item->fecha = $comentario->created_at;
+            $item->fecha = date("H:i d/m/y", strtotime($comentario->created_at));
             $item->comentario = $comentario->comentario;
             $item->respuesta_com = $comentario->respuesta_com;
             return $item;
@@ -147,7 +165,8 @@ class ConsultaTarotistasController extends Controller
         return response()->json([
             "success" => true,
             "message" => "Comentarios del tarotista consultados correctamente",
-            "data" => $data
+            "data" => $data,
+            "total" => $totalComentarios
         ]);
     }
 

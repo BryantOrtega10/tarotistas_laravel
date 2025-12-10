@@ -10,6 +10,7 @@ use App\Models\TarotistasModel;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 
@@ -29,6 +30,17 @@ class LoginTarotistaController extends Controller
         $user = new User();
         $user->name = $request->input("nombre");
         $user->email = $request->input("email");
+        $user->token_push = $request->input("tokenPush");
+        if ($request->has("image")) {
+            if (isset($user->photo)) {
+                Storage::disk('public')->delete('users/' . $user->photo);
+            }
+            $file = $request->file("image");
+            $file_name =  time() . "_" . $file->getClientOriginalName();
+            $file->move(public_path("storage/users"), $file_name);
+            $user->photo = $file_name;
+        }
+
         $user->role = "tarotista";
         $user->password = Hash::make($request->input("password"));
         $user->save();
@@ -46,7 +58,13 @@ class LoginTarotistaController extends Controller
             "message" => "Bienvenido " . $user->name,
             "data" => [
                 "token" => $token,
-                "status" => $tarotista->estado,
+                "user" => [
+                    "id" => $user->id,
+                    "name" => $user->name,
+                    "email" => $user->email,
+                    "photo" => $user->photo,
+                    "status" => $tarotista->estado,
+                ]
             ]
 
         ]);
@@ -67,7 +85,7 @@ class LoginTarotistaController extends Controller
             return response()->json([
                 "success" => false,
                 "message" => "Correo o contraseña incorrectos"
-            ], 401);
+            ], 403);
         }
 
         $user = User::whereEmail($request->input("email"))->first();
@@ -76,8 +94,24 @@ class LoginTarotistaController extends Controller
             return response()->json([
                 "success" => false,
                 "message" => "Tarotista no encontrado"
-            ], 401);
+            ], 403);
         }
+
+        if ($tarotista->estado === 2) {
+            return response()->json([
+                "success" => false,
+                "message" => "Se esta validando tu información, vuelve a intentar ingresar mas tarde"
+            ], 403);
+        }
+        if ($tarotista->estado === 4) {
+            return response()->json([
+                "success" => false,
+                "message" => "Tu usuario ha sido bloqueado, contacta con el administrador para saber la razón de tu bloqueo"
+            ], 403);
+        }
+
+        $user->token_push = $request->input("tokenPush");
+        $user->save();
 
         $token = $user->createToken("auth_token")->plainTextToken;
         return response()->json([
@@ -86,6 +120,13 @@ class LoginTarotistaController extends Controller
             "data" => [
                 "token" => $token,
                 "status" => $tarotista->estado,
+                "user" => [
+                    "id" => $user->id,
+                    "name" => $user->name,
+                    "email" => $user->email,
+                    "photo" => $user->photo,
+                    "status" => $tarotista->estado,
+                ]
             ]
         ], 200);
     }
@@ -141,12 +182,22 @@ class LoginTarotistaController extends Controller
         }
 
         $token = $user->createToken("auth_token")->plainTextToken;
+        $user->token_push = $request->input("tokenPush");
+        $user->save();
+
         return response()->json([
             "success" => true,
             "message" => "Bienvenido " . $user->name,
             "data" => [
                 "token" => $token,
                 "status" => $tarotista->estado,
+                "user" => [
+                    "id" => $user->id,
+                    "name" => $user->name,
+                    "email" => $user->email,
+                    "photo" => $user->photo,
+                    "status" => $tarotista->estado,
+                ]
             ]
         ], 200);
     }

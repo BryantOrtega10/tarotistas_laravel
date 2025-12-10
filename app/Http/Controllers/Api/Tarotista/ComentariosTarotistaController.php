@@ -43,21 +43,40 @@ class ComentariosTarotistaController extends Controller
             ->orderBy('ultimos_comentarios.fecha_ultima_llamada', 'desc')
             ->take($take)
             ->skip($skip)
-            ->get();
+            ->get()
+            ->reverse()
+            ->values();
+
+        $totalComments = ClienteTarotistaModel::query()
+            ->joinSub($sub, 'ultimos_comentarios', function ($join) {
+                $join->on('cliente_tarotista.id', '=', 'ultimos_comentarios.fk_cliente_tarotista');
+            })
+            ->with([
+                'cliente.user:id,name,photo',
+                'ultimoComentario',
+            ])
+            ->where("cliente_tarotista.fk_tarotista", "=", $tarotista->id)
+            ->orderBy('ultimos_comentarios.fecha_ultima_llamada', 'desc')
+            ->count();
+            
+
 
         $data = [];
         foreach ($ultimosComentarios as $itemComentario) {
             $item = new stdClass;
             $item->cliente = $itemComentario->cliente->user;
+            $item->comentario_id = $itemComentario->ultimoComentario->id;
             $item->comentario = $itemComentario->ultimoComentario->comentario;
             $item->respuesta_com = $itemComentario->ultimoComentario->respuesta_com;
+            $item->fecha = date("d/m/Y", strtotime($itemComentario->ultimoComentario->fecha_fin));
             array_push($data, $item);
         }
 
         return response()->json([
             "success" => true,
             "message" => "Comentarios consultados correctamente",
-            "data" => $data
+            "data" => $data,
+            "total" => $totalComments
         ]);
     }
 

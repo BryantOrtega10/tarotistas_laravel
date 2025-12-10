@@ -30,11 +30,11 @@ class LlamadasModel extends Model
     ];
 
     public function cliente_tarotista(){
-        $this->belongsTo(ClienteTarotistaModel::class, "fk_cliente_tarotista", "id");
+        return $this->belongsTo(ClienteTarotistaModel::class, "fk_cliente_tarotista", "id");
     }
 
     public function pago(){
-        $this->belongsTo(PagosModel::class, "fk_pago", "id");
+        return $this->belongsTo(PagosModel::class, "fk_pago", "id");
     }
     
 

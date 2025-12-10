@@ -31,11 +31,20 @@ class ChatsTarotistaController extends Controller
         $sub = ChatsModel::select('fk_cliente_tarotista', DB::raw('MAX(created_at) as fecha_ultimo_chat'))
             ->groupBy('fk_cliente_tarotista');
 
-        $ultimosChats = ClienteTarotistaModel::query()
+        $unReadSub = ChatsModel::select('fk_cliente_tarotista', DB::raw('COUNT(id) as chats_unread'))
+            ->whereNull("leido")
+            ->where("origen","=",1)
+            ->groupBy('fk_cliente_tarotista');
+
+        $ultimosChats = ClienteTarotistaModel::query('unread_counts.chats_unread')
             ->joinSub($sub, 'ultimos_chats', function ($join) {
                 $join->on('cliente_tarotista.id', '=', 'ultimos_chats.fk_cliente_tarotista');
             })
+            ->leftJoinSub($unReadSub, 'unread_counts', function ($join) {
+                $join->on('cliente_tarotista.id', '=', 'unread_counts.fk_cliente_tarotista');
+            })
             ->with([
+                'cliente:id,fecha_nacimiento,fk_user',
                 'cliente.user:id,name,photo',
                 'ultimoChat',
             ])
@@ -45,12 +54,15 @@ class ChatsTarotistaController extends Controller
             ->skip($skip)
             ->get();
 
+        $totalChats = ClienteTarotistaModel::where("fk_tarotista", "=", $tarotista->id)->count();
+
         $data = [];
         foreach ($ultimosChats as $itemsChat) {
             $item = new stdClass;
             $item->idChat = $itemsChat->ultimoChat->fk_cliente_tarotista;
-            $item->cliente = $itemsChat->cliente->user;
+            $item->cliente = $itemsChat->cliente;
             $item->mensaje = $itemsChat->ultimoChat->mensaje;
+            $item->unread = $itemsChat->chats_unread;
             $created = Carbon::parse($itemsChat->ultimoChat->created_at);
             $fecha = $created->isToday() ? 'Hoy' : ($created->isYesterday() ? 'Ayer' : $created->format('Y-m-d'));
             $hora = $created->format('h:i a');
@@ -61,7 +73,8 @@ class ChatsTarotistaController extends Controller
         return response()->json([
             "success" => true,
             "message" => "Chats consultados correctamente",
-            "data" => $data
+            "data" => $data,
+            "total" => $totalChats
         ]);
     }
 
@@ -97,9 +110,24 @@ class ChatsTarotistaController extends Controller
             $mensajes->where('id', '<', $beforeId);
         }
 
-        $mensajes = $mensajes->orderBy('created_at', 'asc')
+        $mensajes = $mensajes->orderBy('id', 'desc')
             ->take($take)
-            ->get();
+            ->get()
+            ->reverse()
+            ->values();
+
+        foreach ($mensajes as $m) {
+            if ($m->origen == 1) {
+                $m->update([
+                    'leido' => date("Y-m-d H:i:s")
+                ]);
+            }
+        }
+
+
+
+        $primerId = ChatsModel::where("fk_cliente_tarotista", "=", $id);
+        $primerId = $primerId->orderBy('id', 'asc')->first();
 
         return response()->json([
             "success" => true,
@@ -112,7 +140,8 @@ class ChatsTarotistaController extends Controller
                     "user" => [
                         "photo" => $relacion->cliente->user->photo
                     ]
-                ]
+                ],
+                "primer_id" => $primerId->id
             ]
         ]);
     }
@@ -147,9 +176,9 @@ class ChatsTarotistaController extends Controller
         $chat->save();
 
         //TODO: Enviar notificacion push al cliente
-        $user = $request->user(); 
-        broadcast(new NuevoMensajeEvent($chat, $user->id))->toOthers();
-        
+        $user = $request->user();
+        broadcast(new NuevoMensajeEvent($chat, $user))->toOthers();
+
         return response()->json([
             "success" => true,
             "message" => "Mensaje agregado correctamente",

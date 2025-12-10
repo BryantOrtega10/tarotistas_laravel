@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Cliente;
 use App\Events\NuevoMensajeEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Cliente\Chat\EnviarChatClienteRequest;
+use App\Http\Utils\Funciones;
 use App\Models\ChatsModel;
 use App\Models\ClienteTarotistaModel;
 use Illuminate\Http\Request;
@@ -31,9 +32,17 @@ class ChatClienteController extends Controller
         $sub = ChatsModel::select('fk_cliente_tarotista', DB::raw('MAX(created_at) as fecha_ultimo_chat'))
             ->groupBy('fk_cliente_tarotista');
 
-        $ultimosChats = ClienteTarotistaModel::query()
+        $unReadSub = ChatsModel::select('fk_cliente_tarotista', DB::raw('COUNT(id) as chats_unread'))
+            ->whereNull("leido")
+            ->where("origen", "=", 2)
+            ->groupBy('fk_cliente_tarotista');
+
+        $ultimosChats = ClienteTarotistaModel::query('unread_counts.chats_unread')
             ->joinSub($sub, 'ultimos_chats', function ($join) {
                 $join->on('cliente_tarotista.id', '=', 'ultimos_chats.fk_cliente_tarotista');
+            })
+            ->leftJoinSub($unReadSub, 'unread_counts', function ($join) {
+                $join->on('cliente_tarotista.id', '=', 'unread_counts.fk_cliente_tarotista');
             })
             ->with([
                 'tarotista.user:id,name,photo',
@@ -45,12 +54,15 @@ class ChatClienteController extends Controller
             ->skip($skip)
             ->get();
 
+        $totalChats = ClienteTarotistaModel::where("fk_cliente", "=", $cliente->id)->count();
+
         $data = [];
         foreach ($ultimosChats as $itemsChat) {
             $item = new stdClass;
             $item->idChat = $itemsChat->ultimoChat->fk_cliente_tarotista;
             $item->tarotista = $itemsChat->tarotista->user;
             $item->mensaje = $itemsChat->ultimoChat->mensaje;
+            $item->unread = $itemsChat->chats_unread;
             $created = Carbon::parse($itemsChat->ultimoChat->created_at);
             $fecha = $created->isToday() ? 'Hoy' : ($created->isYesterday() ? 'Ayer' : $created->format('Y-m-d'));
             $hora = $created->format('h:i a');
@@ -61,7 +73,8 @@ class ChatClienteController extends Controller
         return response()->json([
             "success" => true,
             "message" => "Chats consultados correctamente",
-            "data" => $data
+            "data" => $data,
+            "total" => $totalChats
         ]);
     }
 
@@ -128,9 +141,23 @@ class ChatClienteController extends Controller
             $mensajes->where('id', '<', $beforeId);
         }
 
-        $mensajes = $mensajes->orderBy('created_at', 'asc')
+        $mensajes = $mensajes->orderBy('id', 'desc')
             ->take($take)
-            ->get();
+            ->get()
+            ->reverse()
+            ->values();
+
+        foreach ($mensajes as $m) {
+            if ($m->origen == 2) {
+                $m->update([
+                    'leido' => date("Y-m-d H:i:s")
+                ]);
+            }
+        }
+
+        $primerId = ChatsModel::where("fk_cliente_tarotista", "=", $id);
+        $primerId = $primerId->orderBy('id', 'asc')->first();
+
 
         return response()->json([
             "success" => true,
@@ -144,7 +171,8 @@ class ChatClienteController extends Controller
                     "user" => [
                         "photo" => $relacion->tarotista->user->photo
                     ]
-                ]
+                ],
+                "primer_id" => $primerId->id ?? 0
             ]
         ]);
     }
@@ -171,7 +199,7 @@ class ChatClienteController extends Controller
             ], 404);
         }
 
-        if($relacion->mensajes_gratis <= 0){
+        if ($relacion->mensajes_gratis <= 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'Ya no tienes mensajes gratis disponibles, luego de 1h de llamada se desbloquearan nuevos mensajes',
@@ -189,9 +217,14 @@ class ChatClienteController extends Controller
         $chat->save();
 
         //TODO: Enviar notificacion push al tarotista
-
-        $user = $request->user(); 
-        broadcast(new NuevoMensajeEvent($chat, $user->id))->toOthers();
+        $tarotista = $relacion->tarotista;
+        if (isset($tarotista->user->token_push)) {
+            Funciones::sendNotification($tarotista->user->token_push, "Nuevo mensaje desde un cliente", "Tienes un nuevo mensaje ingresa al app para verlo", [
+                "chat_id" => $id
+            ]);
+        }
+        $user = $request->user();
+        broadcast(new NuevoMensajeEvent($chat, $user))->toOthers();
 
         return response()->json([
             "success" => true,

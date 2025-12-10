@@ -31,7 +31,7 @@ class LlamadaEvent implements ShouldBroadcast
      */
      public function broadcastOn()
     {
-        new PrivateChannel('llamada.'.$this->llamada->fk_cliente_tarotista);
+        return new PrivateChannel('llamada.'.$this->llamada->fk_cliente_tarotista);
     }
 
      public function broadcastAs()

@@ -33,7 +33,7 @@ class NuevoMensajeEvent implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        new PrivateChannel('chat.'.$this->chat->fk_cliente_tarotista);
+        return new PrivateChannel('chat.'.$this->chat->fk_cliente_tarotista);
     }
     
     

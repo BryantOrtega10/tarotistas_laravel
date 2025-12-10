@@ -30,7 +30,7 @@ class ActualizarPerfilTarotista extends ApiRequest
             'horarioFin' => 'nullable',
             'aniosExp' => 'nullable',
             'pais' => 'nullable',
-            'especialidades' => 'nullable|array',
+            'especialidades' => 'nullable',
         ];
     }
 }

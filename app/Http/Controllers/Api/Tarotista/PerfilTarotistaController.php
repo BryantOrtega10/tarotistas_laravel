@@ -11,6 +11,7 @@ use App\Models\EspecialidadesModel;
 use App\Models\EspecialidadesTatoristaModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use stdClass;
 
 class PerfilTarotistaController extends Controller
@@ -43,6 +44,8 @@ class PerfilTarotistaController extends Controller
         if ($request->filled("pais")) {
             $tarotista->fk_pais = $request->input("pais");
         }
+
+        
         if ($request->filled("especialidades")) {
 
             EspecialidadesTatoristaModel::where("fk_tarotista", "=", $tarotista->id)->delete();
@@ -111,6 +114,26 @@ class PerfilTarotistaController extends Controller
         ]);
     }
 
+    /**
+     * Sirve para obtener el estado de conexión del tarotista.
+     * 
+     * @param int $status
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function obtenerEstadoConexion(Request $request)
+    {
+        $tarotista = $request->attributes->get('tarotista');
+        return response()->json([
+            "success" => true,
+            "message" => "Estado de conexión consultado correctamente",
+            "data" => [
+                "conexion_status" => $tarotista->estado_conexion,
+            ]
+        ]);
+    }
+    
     /**
      * Sirve para modificar los datos de la cuenta a la que se le va a pagar al tarotista.
      * 
@@ -209,11 +232,15 @@ class PerfilTarotistaController extends Controller
 
         [$horario_inicio, $horario_fin] = array_pad(explode(" - ", $tarotista->horario ?? ""), 2, "");
 
+        $horario_inicio = date("H:i", strtotime($horario_inicio));
+        $horario_fin = date("H:i", strtotime($horario_fin));
+
         return response()->json([
             "success" => true,
             "message" => "Datos de perfil consultados correctamente",
             "data" => [
                 "nombre" => $tarotista->nombre,
+                "email" => $tarotista->user->email,
                 "photo" => $tarotista->user->photo,
                 "descripcion_corta" => $tarotista->descripcion_corta,
                 "anios_exp" => $tarotista->anios_exp,
@@ -234,17 +261,19 @@ class PerfilTarotistaController extends Controller
      */
     public function actualizarMiPerfil(ActualizarPerfilTarotista $request)
     {
-        $tarotista = $request->attributes->get('tarotista');
-
+        $tarotista = $request->attributes->get('tarotista');       
         if ($request->filled("nombre")) {
             $tarotista->user->name = $request->input("nombre");
             $tarotista->nombre = $request->input("nombre");
             $tarotista->user->save();
         }
-        if ($request->filled("photo")) {
-            $folder = "users/";
-            $file_name =  uniqid() . "_user.png";
-            Funciones::imagenBase64($request->filled("photo"), $folder.$file_name);
+        if ($request->file("photo")) {
+            if (isset($tarotista->user->photo)) {
+                Storage::disk('public')->delete('users/' . $tarotista->user->photo);
+            }
+            $file = $request->file("photo");
+            $file_name =  time() . "_" . $file->getClientOriginalName();
+            $file->move(public_path("storage/users"), $file_name);
             $tarotista->user->photo = $file_name;
             $tarotista->user->save();
         }
@@ -265,16 +294,17 @@ class PerfilTarotistaController extends Controller
             $tarotista->fk_pais = $request->input("pais");
         }
         if ($request->filled("especialidades")) {
-
+            $especialidades = json_decode($request->input("especialidades"), true);
             $arrNuevasEspecialidades = [];
-            foreach ($request->input("especialidades") as $especialidad) {
+            foreach ($especialidades as $especialidad) {
                 if ($especialidad["id"] !== null) {
                     $arrNuevasEspecialidades[] = $especialidad["id"];
                 }
             }
             EspecialidadesTatoristaModel::where("fk_tarotista", "=", $tarotista->id)->whereNotIn("fk_especialidad",$arrNuevasEspecialidades)->delete();
+            
 
-            foreach ($request->input("especialidades") as $especialidad) {
+            foreach ($especialidades as $especialidad) {
                 if ($especialidad["id"] !== null) {
                     EspecialidadesTatoristaModel::create([
                         "fk_especialidad" => $especialidad["id"],
@@ -298,7 +328,9 @@ class PerfilTarotistaController extends Controller
         return response()->json([
             "success" => true,
             "message" => "Datos básicos actualizados correctamente",
-            "data" => []
+            "data" => [
+                "photo" => $tarotista->user->photo
+            ]
         ]);
     }
 }

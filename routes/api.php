@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Cliente\ConsultaTarotistasController;
 use App\Http\Controllers\Api\Cliente\LlamadaClienteController;
 use App\Http\Controllers\Api\Cliente\LoginClienteController;
 use App\Http\Controllers\Api\Cliente\PerfilClienteController;
+use App\Http\Controllers\Api\Cliente\ConfiguracionController;
 use App\Http\Controllers\Api\EspecialidadesController;
 use App\Http\Controllers\Api\PaisesController;
 use App\Http\Controllers\Api\Tarotista\BancosController;
@@ -29,7 +30,16 @@ Route::group(["prefix" => "tarotista"], function () {
 
         Route::get("/bancos", [BancosController::class, 'obtenerBancosPorPais']);
 
+        Route::group(["prefix" => "/mi-perfil"], function () {
+            Route::get('/', [PerfilTarotistaController::class, 'obtenerMiPerfil']);
+            Route::post('/', [PerfilTarotistaController::class, 'actualizarMiPerfil']);
+
+            Route::get('/cuenta', [PerfilTarotistaController::class, 'obtenerMiCuenta']);
+            Route::post('/cuenta', [PerfilTarotistaController::class, 'modificarMiCuenta']);
+        });
+
         Route::group(["prefix" => "/", "middleware" => ["tarotista.approved"]], function () {
+            Route::get("/conexion", [PerfilTarotistaController::class, 'obtenerEstadoConexion']);
             Route::post("/conexion/{status}", [PerfilTarotistaController::class, 'estadoConexion']);
 
             Route::group(["prefix" => "/chats"], function () {
@@ -48,13 +58,7 @@ Route::group(["prefix" => "tarotista"], function () {
                 Route::get('/', [CalificacionesTarotistaController::class, 'obtenerCalificaciones']);
             });
 
-            Route::group(["prefix" => "/mi-perfil"], function () {
-                Route::get('/', [PerfilTarotistaController::class, 'obtenerMiPerfil']);
-                Route::post('/', [PerfilTarotistaController::class, 'actualizarMiPerfil']);
 
-                Route::get('/cuenta', [PerfilTarotistaController::class, 'obtenerMiCuenta']);
-                Route::post('/cuenta', [PerfilTarotistaController::class, 'modificarMiCuenta']);
-            });
 
             Route::group(["prefix" => "/pagos"], function () {
                 Route::get('/', [PagosTarotistaController::class, 'obtenerPagos']);
@@ -76,6 +80,7 @@ Route::group(["prefix" => "cliente"], function () {
     Route::post("/login", [LoginClienteController::class, 'login']);
     Route::post("/login-redes", [LoginClienteController::class, 'loginRedes']);
 
+    Route::get("/configuracion", [ConfiguracionController::class, 'obtenerConfig']);
 
     Route::group(["prefix" => "/tarotistas"], function () {
         Route::get("/", [ConsultaTarotistasController::class, 'obtenerTarotistas']);
@@ -83,7 +88,7 @@ Route::group(["prefix" => "cliente"], function () {
         Route::get("/{id}/comentarios", [ConsultaTarotistasController::class, 'obtenerComentarios']);
     });
 
-    Route::group(["prefix" => "/chat", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
+    Route::group(["prefix" => "/chats", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
         Route::get("/", [ChatClienteController::class, 'obtenerUltimosChats']);
         Route::post("/obtener-id/{idTarotista}", [ChatClienteController::class, 'obtenerId']);
         Route::get("/{id}", [ChatClienteController::class, 'obtenerChats']);
@@ -92,7 +97,7 @@ Route::group(["prefix" => "cliente"], function () {
 
     Route::group(["prefix" => "/mi-perfil", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
         Route::get('/', [PerfilClienteController::class, 'obtenerMiPerfil']);
-        Route::post('/', [PerfilClienteController::class, 'actualizarMiPerfil']);
+        Route::put('/', [PerfilClienteController::class, 'actualizarMiPerfil']);
         Route::get('/medio-pago', [PerfilClienteController::class, 'obtenerMedioPago']);
     });
 
