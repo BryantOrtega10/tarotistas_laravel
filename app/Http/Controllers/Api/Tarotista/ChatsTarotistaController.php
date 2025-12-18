@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Tarotista;
 use App\Events\NuevoMensajeEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Tarotista\Chats\EnviarChatRequest;
+use App\Http\Utils\Funciones;
 use App\Models\ChatsModel;
 use App\Models\ClienteTarotistaModel;
 use Illuminate\Http\Request;
@@ -175,7 +176,14 @@ class ChatsTarotistaController extends Controller
         $chat->fk_cliente_tarotista = $id;
         $chat->save();
 
-        //TODO: Enviar notificacion push al cliente
+        $cliente = $relacion->cliente;
+        if (isset($cliente->user->token_push)) {
+            Funciones::sendNotification($cliente->user->token_push, "Nuevo mensaje de tarotista", "Tienes un nuevo mensaje del tarotista", [
+                "message_id" => $id,
+                "chat_id" => $chat->id,
+                "mensaje" => $chat->mensaje
+            ]);
+        }
         $user = $request->user();
         broadcast(new NuevoMensajeEvent($chat, $user))->toOthers();
 

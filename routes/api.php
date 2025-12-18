@@ -97,7 +97,7 @@ Route::group(["prefix" => "cliente"], function () {
 
     Route::group(["prefix" => "/mi-perfil", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
         Route::get('/', [PerfilClienteController::class, 'obtenerMiPerfil']);
-        Route::put('/', [PerfilClienteController::class, 'actualizarMiPerfil']);
+        Route::post('/', [PerfilClienteController::class, 'actualizarMiPerfil']);
         Route::get('/medio-pago', [PerfilClienteController::class, 'obtenerMedioPago']);
     });
 

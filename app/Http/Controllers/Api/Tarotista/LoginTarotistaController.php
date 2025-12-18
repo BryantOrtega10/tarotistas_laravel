@@ -149,20 +149,20 @@ class LoginTarotistaController extends Controller
                 return response()->json([
                     "success" => false,
                     "message" => "Ya has iniciado con otro proveedor, por favor inicia con: " . $user->provider
-                ], 401);
+                ], 400);
             }
             if ($user->provider_id != $request->input("provider_id")) {
                 return response()->json([
                     "success" => false,
                     "message" => "El ID de tu cuenta no coincide con los registrados: " . $user->provider
-                ], 401);
+                ], 400);
             }
             $tarotista = TarotistasModel::where("fk_user", "=", $user->id)->first();
             if (!isset($tarotista)) {
                 return response()->json([
                     "success" => false,
                     "message" => "Tarotista no encontrado"
-                ], 401);
+                ], 400);
             }
         } else {
             $user = new User();

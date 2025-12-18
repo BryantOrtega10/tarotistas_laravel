@@ -18,7 +18,7 @@ class ChatsModel extends Model
     ];
 
     public function cliente_tarotista(){
-        $this->belongsTo(ClienteTarotistaModel::class, "fk_cliente_tarotista", "id");
+        return $this->belongsTo(ClienteTarotistaModel::class, "fk_cliente_tarotista", "id");
     }
 
 

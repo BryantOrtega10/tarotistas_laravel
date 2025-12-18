@@ -220,7 +220,9 @@ class ChatClienteController extends Controller
         $tarotista = $relacion->tarotista;
         if (isset($tarotista->user->token_push)) {
             Funciones::sendNotification($tarotista->user->token_push, "Nuevo mensaje desde un cliente", "Tienes un nuevo mensaje ingresa al app para verlo", [
-                "chat_id" => $id
+                "message_id" => $id,
+                "chat_id" => $chat->id,
+                "mensaje" => $chat->mensaje
             ]);
         }
         $user = $request->user();

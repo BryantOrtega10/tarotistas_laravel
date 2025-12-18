@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Cliente\Perfil\ActualizarPerfilClienteRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class PerfilClienteController extends Controller
 {
@@ -43,25 +44,39 @@ class PerfilClienteController extends Controller
     public function actualizarMiPerfil(ActualizarPerfilClienteRequest $request)
     {
         $cliente = $request->attributes->get('cliente');
-        
+
         $cliente->nombre = $request->input("nombre");
         $cliente->fecha_nacimiento = $request->input("fecha_nacimiento");
-        
-        if($cliente->user->provider === "Correo"){
+
+        if ($request->file("photo")) {
+            if (isset($cliente->user->photo)) {
+                Storage::disk('public')->delete('users/' . $cliente->user->photo);
+            }
+            $file = $request->file("photo");
+            $file_name =  time() . "_" . $file->getClientOriginalName();
+            $file->move(public_path("storage/users"), $file_name);
+            $cliente->user->photo = $file_name;
+            $cliente->user->save();
+        }
+
+
+        if ($cliente->user->provider === "Correo") {
             $cliente->user->email = $request->input("email");
-            if($request->filled("password")){
+            if ($request->filled("password")) {
                 $cliente->user->password = Hash::make($request->input("password"));
             }
             $cliente->user->save();
         }
-        
+
         $cliente->save();
 
-       
+
         return response()->json([
             "success" => true,
             "message" => "Datos básicos actualizados correctamente",
-            "data" => []
+            "data" => [
+                "photo" => $cliente->user->photo
+            ]
         ]);
     }
 
@@ -86,5 +101,4 @@ class PerfilClienteController extends Controller
             ]
         ]);
     }
-    
 }
