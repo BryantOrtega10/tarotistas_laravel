@@ -66,8 +66,15 @@ Route::group(["prefix" => "tarotista"], function () {
                 Route::get('/unico/{id}', [PagosTarotistaController::class, 'obtenerPagoxId']);
             });
 
-            Route::group(["prefix" => "/llamada", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
+            Route::group(["prefix" => "/llamada"], function () {
                 Route::post('/aceptar/{idLlamada}', [LlamadaTarotistaController::class, 'aceptar']);
+                
+                Route::post('/sendOffer/{idLlamada}', [LlamadaTarotistaController::class, 'sendOffer']);
+                Route::post('/ice/{idLlamada}', [LlamadaTarotistaController::class, 'ice']);
+                Route::post('/answer/{idLlamada}', [LlamadaTarotistaController::class, 'answer']);
+
+
+                Route::post('/cancelar/{idLlamada}', [LlamadaTarotistaController::class, 'cancelar']);
                 Route::post('/finalizar/{idLlamada}', [LlamadaTarotistaController::class, 'finalizar']);
                 Route::get('/detalle/{idLlamada}', [LlamadaTarotistaController::class, 'detalle']);
             });
@@ -107,8 +114,12 @@ Route::group(["prefix" => "cliente"], function () {
     });
 
     Route::group(["prefix" => "/llamada", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
-        Route::post('/solicitar/{idRelacion}', [LlamadaClienteController::class, 'solicitar']);
-        Route::post('/cancelar/{idLlamada}', [LlamadaClienteController::class, 'cancelar']);
+        Route::post('/solicitar/{idTarotista}', [LlamadaClienteController::class, 'solicitar']);
+        Route::post('/sendOffer/{idLlamada}', [LlamadaTarotistaController::class, 'sendOffer']);
+        Route::post('/ice/{idLlamada}', [LlamadaTarotistaController::class, 'ice']);
+        Route::post('/answer/{idLlamada}', [LlamadaTarotistaController::class, 'answer']);
+        
+        Route::post('/cancelar/{idTarotista}', [LlamadaClienteController::class, 'cancelar']);
         Route::post('/finalizar/{idLlamada}', [LlamadaClienteController::class, 'finalizar']);
         Route::post('/calificar/{idLlamada}', [LlamadaClienteController::class, 'calificar']);
     });

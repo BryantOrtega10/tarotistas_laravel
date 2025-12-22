@@ -19,7 +19,7 @@ class LlamadaEvent implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
-    public function __construct(public LlamadasModel $llamada, public User $user)
+    public function __construct(public LlamadasModel $llamada, public User $user, public array $payload = [])
     {
         //
     }
@@ -29,13 +29,20 @@ class LlamadaEvent implements ShouldBroadcastNow
      *
      * @return array<int, \Illuminate\Broadcasting\Channel>
      */
-     public function broadcastOn()
+    public function broadcastOn()
     {
-        return new PrivateChannel('llamada.'.$this->llamada->fk_cliente_tarotista);
+        return new PrivateChannel('llamada.' . $this->llamada->fk_cliente_tarotista);
     }
 
-     public function broadcastAs()
+    public function broadcastAs()
     {
         return 'llamada.change';
+    }
+    
+    public function broadcastWith()
+    {
+        return array_merge([
+            'llamada' => $this->llamada,
+        ], $this->payload);
     }
 }

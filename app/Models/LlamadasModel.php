@@ -26,7 +26,8 @@ class LlamadasModel extends Model
         'comentario',
         'respuesta_com',
         'fk_cliente_tarotista',
-        'fk_pago'
+        'fk_pago',
+        'type'
     ];
 
     public function cliente_tarotista(){

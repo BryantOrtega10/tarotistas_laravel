@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Tarotista;
 
 use App\Events\LlamadaEvent;
 use App\Http\Controllers\Controller;
+use App\Http\Utils\Funciones;
 use App\Models\LlamadasModel;
 use DateTime;
 use Illuminate\Http\Request;
@@ -23,8 +24,8 @@ class LlamadaTarotistaController extends Controller
         $tarotista = $request->attributes->get('tarotista');
 
         $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
-                $query->where('fk_tarotista', $tarotista->id);
-            })
+            $query->where('fk_tarotista', $tarotista->id);
+        })
             ->whereIn("id", $idLlamada)
             ->first();
 
@@ -38,17 +39,29 @@ class LlamadaTarotistaController extends Controller
         if ($llamada->estado_llamada !== 1) {
             return response()->json([
                 "success" => false,
-                "message" => "No se puede aceptar esta llamada actualmente esta en estado: ".$llamada->txt_estado_llamada,
+                "message" => "No se puede aceptar esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
             ], 400);
         }
 
         $llamada->estado_llamada = 3;
+        $llamada->type = 'call-start';
         $llamada->fecha_inicio = date("Y-m-d H:i:s");
         $llamada->save();
 
-        $user = $request->user(); 
-        broadcast(new LlamadaEvent($llamada, $user->id))->toOthers();
-        //TODO: Enviar notificacion push al cliente
+        $user = $request->user();
+        $relacion = $llamada->cliente_tarotista;
+
+        $cliente = $relacion->cliente;
+        //Enviar notificacion push al cliente
+        if (isset($cliente->user->token_push)) {
+            Funciones::sendNotification($cliente->user->token_push, "Llamada aceptada", "Llamada aceptada por el tarotista ingresa a verla", [
+                "relacion_id" => $relacion->id,
+                "llamada_id" => $llamada->id,
+                "accion" => "aceptada",
+            ]);
+        }
+
+        broadcast(new LlamadaEvent($llamada, $user))->toOthers();
         return response()->json([
             "success" => true,
             "message" => "Llamada aceptada correctamente",
@@ -56,7 +69,220 @@ class LlamadaTarotistaController extends Controller
                 "llamada" => $llamada,
             ]
         ]);
+    }
 
+
+    /**
+     * Sirve para enviar el offer de una llamada que este en estado aceptada
+     * 
+     * @param int $idLlamada
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function sendOffer($idLlamada, Request $request)
+    {
+        $tarotista = $request->attributes->get('tarotista');
+
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
+            $query->where('fk_tarotista', $tarotista->id);
+        })
+            ->whereIn("id", $idLlamada)
+            ->first();
+
+        if (!isset($llamada)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se encuentra ninguna llamada con este ID",
+            ], 404);
+        }
+
+        if ($llamada->estado_llamada !== 3) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se puede enviar el id esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
+            ], 400);
+        }
+
+        $llamada->type = 'webrtc-offer';
+        $llamada->save();
+
+        $user = $request->user();
+
+        broadcast(new LlamadaEvent($llamada, $user, [
+            'type' => 'webrtc-offer',
+            'offer' => $request->offer
+        ]))->toOthers();
+
+        return response()->json([
+            "success" => true,
+            "message" => "Llamada offer enviado correctamente",
+            "data" => [
+                "llamada" => $llamada,
+            ]
+        ]);
+    }
+
+
+    /**
+     * Sirve para enviar el id de una llamada que este en estado aceptada
+     * 
+     * @param int $idLlamada
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function ice($idLlamada, Request $request)
+    {
+        $tarotista = $request->attributes->get('tarotista');
+
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
+            $query->where('fk_tarotista', $tarotista->id);
+        })
+            ->whereIn("id", $idLlamada)
+            ->first();
+
+        if (!isset($llamada)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se encuentra ninguna llamada con este ID",
+            ], 404);
+        }
+
+        if ($llamada->estado_llamada !== 3) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se puede enviar el id esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
+            ], 400);
+        }
+
+        $llamada->type = 'webrtc-ice';
+        $llamada->save();
+
+        $user = $request->user();
+
+        broadcast(new LlamadaEvent($llamada, $user, [
+            'type' => 'webrtc-ice',
+            'offer' => $request->candidate
+        ]))->toOthers();
+
+        return response()->json([
+            "success" => true,
+            "message" => "Llamada ice candidate enviado correctamente",
+            "data" => [
+                "llamada" => $llamada,
+            ]
+        ]);
+    }
+
+
+    /**
+     * Sirve para enviar la respuesta de una llamada que este en estado aceptada
+     * 
+     * @param int $idLlamada
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function answer($idLlamada, Request $request)
+    {
+        $tarotista = $request->attributes->get('tarotista');
+
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
+            $query->where('fk_tarotista', $tarotista->id);
+        })
+            ->whereIn("id", $idLlamada)
+            ->first();
+
+        if (!isset($llamada)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se encuentra ninguna llamada con este ID",
+            ], 404);
+        }
+
+        if ($llamada->estado_llamada !== 3) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se puede enviar la respuesta de esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
+            ], 400);
+        }
+
+        $llamada->type = 'webrtc-answer';
+        $llamada->save();
+
+        $user = $request->user();
+
+        broadcast(new LlamadaEvent($llamada, $user, [
+            'type' => 'webrtc-answer',
+            'answer' => $request->answer
+        ]))->toOthers();
+
+        return response()->json([
+            "success" => true,
+            "message" => "Llamada answer enviado correctamente",
+            "data" => [
+                "llamada" => $llamada,
+            ]
+        ]);
+    }
+
+    /**
+     * Sirve para cancelar una llamada que este en estado solicitada
+     * 
+     * @param int $idLlamada
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function cancelar($idLlamada, Request $request)
+    {
+        $tarotista = $request->attributes->get('tarotista');
+
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
+            $query->where('fk_tarotista', $tarotista->id);
+        })
+            ->whereIn("id", $idLlamada)
+            ->first();
+
+        if (!isset($llamada)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se encuentra ninguna llamada con este ID",
+            ], 404);
+        }
+
+        if ($llamada->estado_llamada !== 1) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se puede aceptar esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
+            ], 400);
+        }
+
+        $llamada->estado_llamada = 2;
+        $llamada->save();
+
+        $user = $request->user();
+        $relacion = $llamada->cliente_tarotista;
+
+        $cliente = $relacion->cliente;
+        //Enviar notificacion push al cliente
+        if (isset($cliente->user->token_push)) {
+            Funciones::sendNotification($cliente->user->token_push, "Llamada rechazada", "Llamada rechazada por el tarotista vuelve a intentarlo mas tarde", [
+                "relacion_id" => $relacion->id,
+                "llamada_id" => $llamada->id,
+                "accion" => "cancelada",
+            ]);
+        }
+
+        broadcast(new LlamadaEvent($llamada, $user))->toOthers();
+        return response()->json([
+            "success" => true,
+            "message" => "Llamada rechazada correctamente",
+            "data" => [
+                "llamada" => $llamada,
+            ]
+        ]);
     }
 
 
@@ -73,8 +299,8 @@ class LlamadaTarotistaController extends Controller
         $tarotista = $request->attributes->get('tarotista');
 
         $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
-                $query->where('fk_tarotista', $tarotista->id);
-            })
+            $query->where('fk_tarotista', $tarotista->id);
+        })
             ->whereIn("id", $idLlamada)
             ->first();
 
@@ -88,7 +314,7 @@ class LlamadaTarotistaController extends Controller
         if ($llamada->estado_llamada !== 3) {
             return response()->json([
                 "success" => false,
-                "message" => "No se puede finalizar esta llamada actualmente esta en estado: ".$llamada->txt_estado_llamada,
+                "message" => "No se puede finalizar esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
             ], 400);
         }
 
@@ -106,10 +332,21 @@ class LlamadaTarotistaController extends Controller
         $llamada->estado_llamada = 4;
         $llamada->save();
 
-        $user = $request->user(); 
-        broadcast(new LlamadaEvent($llamada, $user->id));
-       
+        $user = $request->user();
+        broadcast(new LlamadaEvent($llamada, $user->id, [
+            "type" => 'call-end'
+        ]));
+
         //TODO: Enviar notificacion push al cliente
+        $relacion = $llamada->cliente_tarotista;
+        if (isset($cliente->user->token_push)) {
+            Funciones::sendNotification($cliente->user->token_push, "Llamada finalizada", "Llamada finalizada por el tarotista", [
+                "relacion_id" => $relacion->id,
+                "llamada_id" => $llamada->id,
+                "accion" => "finalizada",
+            ]);
+        }
+
         //TODO: Job de Braintree Paypal
 
         return response()->json([
@@ -119,7 +356,6 @@ class LlamadaTarotistaController extends Controller
                 "llamada" => $llamada,
             ]
         ]);
-
     }
 
     /**
@@ -135,8 +371,8 @@ class LlamadaTarotistaController extends Controller
         $tarotista = $request->attributes->get('tarotista');
 
         $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
-                $query->where('fk_tarotista', $tarotista->id);
-            })
+            $query->where('fk_tarotista', $tarotista->id);
+        })
             ->whereIn("id", $idLlamada)
             ->first();
 

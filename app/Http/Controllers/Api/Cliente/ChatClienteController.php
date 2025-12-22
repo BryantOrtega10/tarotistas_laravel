@@ -216,7 +216,7 @@ class ChatClienteController extends Controller
         $chat->fk_cliente_tarotista = $id;
         $chat->save();
 
-        //TODO: Enviar notificacion push al tarotista
+       
         $tarotista = $relacion->tarotista;
         if (isset($tarotista->user->token_push)) {
             Funciones::sendNotification($tarotista->user->token_push, "Nuevo mensaje desde un cliente", "Tienes un nuevo mensaje ingresa al app para verlo", [

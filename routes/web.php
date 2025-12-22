@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\HistorialPagosController;
 use App\Http\Controllers\Web\PagosController;
 use App\Http\Controllers\Web\PaisesController;
 use App\Http\Controllers\Web\TarotistaController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
@@ -29,7 +30,11 @@ Route::get('/', function () {
 
 Route::post('/login', [LoginController::class, 'login']);
 
-
+Route::get('/migrate', function() {
+    $exitCode = Artisan::call('migrate');
+    
+    return '<h3>Migraci&oacute;n completada '.$exitCode.'</h3>';
+});
 
 Route::get("storage-link", function () {
     File::link(
