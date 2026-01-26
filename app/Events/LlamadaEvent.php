@@ -11,6 +11,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class LlamadaEvent implements ShouldBroadcastNow
 {
@@ -21,7 +22,7 @@ class LlamadaEvent implements ShouldBroadcastNow
      */
     public function __construct(public LlamadasModel $llamada, public User $user, public array $payload = [])
     {
-        //
+        Log::info("Broadcast now enviado al canal private-llamada.{$this->llamada->id}");
     }
 
     /**
@@ -31,7 +32,7 @@ class LlamadaEvent implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('llamada.' . $this->llamada->fk_cliente_tarotista);
+        return new PrivateChannel('llamada.' . $this->llamada->id);
     }
 
     public function broadcastAs()

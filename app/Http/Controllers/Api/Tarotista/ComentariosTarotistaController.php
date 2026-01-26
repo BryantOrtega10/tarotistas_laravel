@@ -29,7 +29,6 @@ class ComentariosTarotistaController extends Controller
             ->where("estado_llamada", "=", 4)
             ->whereNotNull("comentario")
             ->groupBy('fk_cliente_tarotista');
-        //TODO: Arreglar para que traiga todos los comentarios no solo el ultimo.
 
         $ultimosComentarios = ClienteTarotistaModel::query()
             ->joinSub($sub, 'ultimos_comentarios', function ($join) {
@@ -46,7 +45,8 @@ class ComentariosTarotistaController extends Controller
             ->get()
             ->reverse()
             ->values();
-
+        dd($ultimosComentarios);    
+        
         $totalComments = ClienteTarotistaModel::query()
             ->joinSub($sub, 'ultimos_comentarios', function ($join) {
                 $join->on('cliente_tarotista.id', '=', 'ultimos_comentarios.fk_cliente_tarotista');

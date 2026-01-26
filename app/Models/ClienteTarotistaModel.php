@@ -46,6 +46,6 @@ class ClienteTarotistaModel extends Model
         return $this->hasOne(LlamadasModel::class, 'fk_cliente_tarotista', 'id')
             ->where('estado_llamada', 4)
             ->whereNotNull('comentario')
-            ->latestOfMany();
+            ->orderByDesc('created_at');
     }
 }

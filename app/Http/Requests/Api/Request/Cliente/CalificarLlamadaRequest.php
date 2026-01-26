@@ -24,7 +24,7 @@ class CalificarLlamadaRequest extends ApiRequest
     {
         return [
             'calificacion' => 'required',
-            'comentario' => 'required',
+            'comentario' => 'nullable',
         ];
     }
 }

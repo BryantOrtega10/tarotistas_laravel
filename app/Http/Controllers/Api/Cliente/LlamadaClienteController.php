@@ -63,7 +63,7 @@ class LlamadaClienteController extends Controller
 
         //Validar que el tarotista no este en una llamada
         $tarotista = $relacion->tarotista;
-        if ($tarotista->estado_conexion !== 3 || $tarotista->estado === 3) {
+        if ($tarotista->estado !== 3) {
             return response()->json([
                 "success" => false,
                 "message" => "El tarotista no esta disponible en este momento",
@@ -113,12 +113,12 @@ class LlamadaClienteController extends Controller
      */
     public function sendOffer($idLlamada, Request $request)
     {
-        $tarotista = $request->attributes->get('tarotista');
+        $cliente = $request->attributes->get('cliente');
 
-        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
-            $query->where('fk_tarotista', $tarotista->id);
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($cliente) {
+            $query->where('fk_cliente', $cliente->id);
         })
-            ->whereIn("id", $idLlamada)
+            ->where("id", $idLlamada)
             ->first();
 
         if (!isset($llamada)) {
@@ -165,12 +165,12 @@ class LlamadaClienteController extends Controller
      */
     public function ice($idLlamada, Request $request)
     {
-        $tarotista = $request->attributes->get('tarotista');
+        $cliente = $request->attributes->get('cliente');
 
-        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
-            $query->where('fk_tarotista', $tarotista->id);
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($cliente) {
+            $query->where('fk_cliente', $cliente->id);
         })
-            ->whereIn("id", $idLlamada)
+            ->where("id", $idLlamada)
             ->first();
 
         if (!isset($llamada)) {
@@ -194,7 +194,7 @@ class LlamadaClienteController extends Controller
 
         broadcast(new LlamadaEvent($llamada, $user, [
             'type' => 'webrtc-ice',
-            'offer' => $request->candidate
+            'candidate' => $request->candidate
         ]))->toOthers();
 
         return response()->json([
@@ -217,12 +217,12 @@ class LlamadaClienteController extends Controller
      */
     public function answer($idLlamada, Request $request)
     {
-        $tarotista = $request->attributes->get('tarotista');
+        $cliente = $request->attributes->get('cliente');
 
-        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
-            $query->where('fk_tarotista', $tarotista->id);
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($cliente) {
+            $query->where('fk_cliente', $cliente->id);
         })
-            ->whereIn("id", $idLlamada)
+            ->where("id", $idLlamada)
             ->first();
 
         if (!isset($llamada)) {
@@ -275,8 +275,8 @@ class LlamadaClienteController extends Controller
             $query->where('fk_cliente', $cliente->id);
             $query->where('fk_tarotista', $idTarotista);
         })
-        ->where("estado_llamada","=",1)
-        ->first();
+            ->whereIn("estado_llamada", [1, 2])
+            ->first();
 
         if (!isset($llamada)) {
             return response()->json([
@@ -289,7 +289,7 @@ class LlamadaClienteController extends Controller
         $llamada->save();
 
         $user = $request->user();
-        broadcast(new LlamadaEvent($llamada, $user->id))->toOthers();
+        broadcast(new LlamadaEvent($llamada, $user))->toOthers();
 
         return response()->json([
             "success" => true,
@@ -315,7 +315,7 @@ class LlamadaClienteController extends Controller
         $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($cliente) {
             $query->where('fk_cliente', $cliente->id);
         })
-            ->whereIn("id", $idLlamada)
+            ->where("id", $idLlamada)
             ->first();
 
         if (!isset($llamada)) {
@@ -346,8 +346,12 @@ class LlamadaClienteController extends Controller
         $llamada->estado_llamada = 4;
         $llamada->save();
 
+        $tarotista = $llamada->cliente_tarotista->tarotista;
+        $tarotista->estado_conexion = 3;
+        $tarotista->save();
+
         $user = $request->user();
-        broadcast(new LlamadaEvent($llamada, $user->id));
+        broadcast(new LlamadaEvent($llamada, $user));
 
         //TODO: Enviar notificacion push al tarotista
         //TODO: Job de Braintree Paypal
@@ -377,7 +381,7 @@ class LlamadaClienteController extends Controller
         $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($cliente) {
             $query->where('fk_cliente', $cliente->id);
         })
-            ->whereIn("id", $idLlamada)
+            ->where("id", $idLlamada)
             ->first();
 
         if (!isset($llamada)) {
@@ -396,6 +400,89 @@ class LlamadaClienteController extends Controller
             "success" => true,
             "message" => "Llamada calificada correctamente",
 
+        ]);
+    }
+
+    /**
+     * Sirve para ver el detalle de una llamada 
+     * 
+     * @param int $idLlamada
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function detalle($idLlamada, Request $request)
+    {
+        $cliente = $request->attributes->get('cliente');
+
+        $llamada = LlamadasModel::with([
+            "cliente_tarotista.cliente",
+            "cliente_tarotista.cliente.user",
+            "cliente_tarotista.tarotista",
+            "cliente_tarotista.tarotista.user",
+        ])
+            ->whereHas('cliente_tarotista', function ($query) use ($cliente) {
+                $query->where('fk_cliente', $cliente->id);
+            })
+            ->where("id", $idLlamada)
+            ->first();
+
+        if (!isset($llamada)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se encuentra ninguna llamada con este ID",
+            ], 404);
+        }
+
+        return response()->json([
+            "success" => true,
+            "message" => "Llamada consultada correctamente",
+            "data" => [
+                "llamada" => $llamada,
+            ]
+        ]);
+    }
+
+
+    /**
+     * Sirve para ver si el cliente tiene una llamada activa
+     * 
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function activa(Request $request)
+    {
+        $cliente = $request->attributes->get('cliente');
+
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($cliente) {
+            $query->where('fk_cliente', $cliente->id);
+        })
+            ->where("estado_llamada", 3)
+            ->first();
+
+        if (!isset($llamada)) {
+            $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($cliente) {
+                $query->where('fk_tarotista', $cliente->id);
+            })
+                ->where("estado_llamada", 4)
+                ->whereNull("calificacion")
+                ->first();
+
+            if (!isset($llamada)) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "No se encuentra ninguna llamada activa",
+                ]);
+            }
+        }
+
+        return response()->json([
+            "success" => true,
+            "message" => "Llamada consultada correctamente",
+            "data" => [
+                "llamada" => $llamada,
+            ]
         ]);
     }
 }
