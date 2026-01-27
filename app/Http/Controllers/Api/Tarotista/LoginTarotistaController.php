@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRedesRequest;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegistroRequest;
+use App\Http\Utils\Funciones;
 use App\Models\TarotistasModel;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -38,7 +39,12 @@ class LoginTarotistaController extends Controller
             $file = $request->file("image");
             $file_name =  time() . "_" . $file->getClientOriginalName();
             $file->move(public_path("storage/users"), $file_name);
-            $user->photo = $file_name;
+
+            $path = explode($file_name,Storage::disk("public")->path("users/".$file_name));
+            $pathFinal = Funciones::resizeImage($path[0], $file_name, "user", 500, 500);
+            $pathFinal = explode("/",$pathFinal);
+            $finalFileName = last($pathFinal);
+            $user->photo = $finalFileName;
         }
 
         $user->role = "tarotista";
@@ -106,10 +112,17 @@ class LoginTarotistaController extends Controller
         if ($tarotista->estado === 4) {
             return response()->json([
                 "success" => false,
+                "message" => "Se ha rechazado tu aprobación, contacta con el administrador para saber la razón de tu rechazo"
+            ], 403);
+        }
+        if ($tarotista->estado === 5) {
+            return response()->json([
+                "success" => false,
                 "message" => "Tu usuario ha sido bloqueado, contacta con el administrador para saber la razón de tu bloqueo"
             ], 403);
         }
 
+        
         $user->token_push = $request->input("tokenPush");
         $user->save();
 
@@ -179,6 +192,25 @@ class LoginTarotistaController extends Controller
             $tarotista->estado = 1;
             $tarotista->fk_user = $user->id;
             $tarotista->save();
+        }
+
+        if ($tarotista->estado === 2) {
+            return response()->json([
+                "success" => false,
+                "message" => "Se esta validando tu información, vuelve a intentar ingresar mas tarde"
+            ], 403);
+        }
+        if ($tarotista->estado === 4) {
+            return response()->json([
+                "success" => false,
+                "message" => "Se ha rechazado tu aprobación, contacta con el administrador para saber la razón de tu rechazo"
+            ], 403);
+        }
+        if ($tarotista->estado === 5) {
+            return response()->json([
+                "success" => false,
+                "message" => "Tu usuario ha sido bloqueado, contacta con el administrador para saber la razón de tu bloqueo"
+            ], 403);
         }
 
         $token = $user->createToken("auth_token")->plainTextToken;

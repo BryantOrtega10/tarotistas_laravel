@@ -52,7 +52,7 @@ class TarotistasModel extends Model
     public function txtEstado(): Attribute
     {
         return Attribute::make(
-            get: fn() => [1 => "En Registro", 2 => "Esperando aprobación", 3 => "Activado", 4 => "Rechazado"][$this->estado] ?? null
+            get: fn() => [1 => "En Registro", 2 => "Esperando aprobación", 3 => "Activado", 4 => "Rechazado", 5 => "Bloqueado"][$this->estado] ?? null
         );
     }
 

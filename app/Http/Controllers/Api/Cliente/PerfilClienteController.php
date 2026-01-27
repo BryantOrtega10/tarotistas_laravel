@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Cliente;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Cliente\Perfil\ActualizarPerfilClienteRequest;
+use App\Http\Utils\Funciones;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -55,7 +56,13 @@ class PerfilClienteController extends Controller
             $file = $request->file("photo");
             $file_name =  time() . "_" . $file->getClientOriginalName();
             $file->move(public_path("storage/users"), $file_name);
-            $cliente->user->photo = $file_name;
+
+            $path = explode($file_name,Storage::disk("public")->path("users/".$file_name));
+            $pathFinal = Funciones::resizeImage($path[0], $file_name, "user", 500, 500);
+            $pathFinal = explode("/",$pathFinal);
+            $finalFileName = last($pathFinal);
+
+            $cliente->user->photo = $finalFileName;
             $cliente->user->save();
         }
 

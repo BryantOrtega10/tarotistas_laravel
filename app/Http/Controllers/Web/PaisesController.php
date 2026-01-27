@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\Paises\CrearPaisRequest;
 use App\Http\Requests\Web\Paises\EditarPaisRequest;
+use App\Http\Utils\Funciones;
 use App\Models\PaisesModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -30,7 +31,13 @@ class PaisesController extends Controller
             $file = $request->file("bandera");
             $file_name =  "bandera-" . $pais->id. ".jpg";
             $file->move(public_path("storage/paises"), $file_name);
-            $pais->bandera = $file_name;
+            
+            $path = explode($file_name,Storage::disk("public")->path("paises/".$file_name));
+            $pathFinal = Funciones::resizeImage($path[0], $file_name, "pais", 50, 50);
+            $pathFinal = explode("/",$pathFinal);
+            $finalFileName = last($pathFinal);
+
+            $pais->bandera = $finalFileName;
         }
         $pais->save();
         return redirect(route('paises.lista'))->with('message', 'Pais creado correctamente');
@@ -53,7 +60,12 @@ class PaisesController extends Controller
             $file = $request->file("bandera");
             $file_name =  "bandera-" . $pais->id. ".jpg";
             $file->move(public_path("storage/paises"), $file_name);
-            $pais->bandera = $file_name;
+
+            $path = explode($file_name,Storage::disk("public")->path("paises/".$file_name));
+            $pathFinal = Funciones::resizeImage($path[0], $file_name, "pais", 50, 50);
+            $pathFinal = explode("/",$pathFinal);
+            $finalFileName = last($pathFinal);
+            $pais->bandera = $finalFileName;
         }
 
         $pais->save();

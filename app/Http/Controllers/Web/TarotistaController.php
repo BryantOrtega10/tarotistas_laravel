@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\Tarotista\AprobarRequest;
 use App\Http\Requests\Web\Tarotista\EditarRequest;
+use App\Http\Utils\Funciones;
+use App\Models\BancosModel;
 use App\Models\EspecialidadesModel;
 use App\Models\EspecialidadesTatoristaModel;
 use App\Models\PaisesModel;
 use App\Models\TarotistasModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class TarotistaController extends Controller
 {
@@ -161,9 +164,11 @@ class TarotistaController extends Controller
     public function mostrarEditar($id)
     {
         $paises = PaisesModel::orderBy("nombre", "asc")->get();
+        
         $especialidades = EspecialidadesModel::select('id','nombre')->orderBy("nombre", "asc")->get();
         $tarotista = TarotistasModel::find($id);
-        return view('tarotistas.editar', compact('paises', 'especialidades', 'tarotista'));
+        $bancos = BancosModel::where("fk_pais","=",$tarotista->fk_pais)->orderBy("nombre", "asc")->get();
+        return view('tarotistas.editar', compact('paises', 'especialidades', 'tarotista', 'bancos'));
     }
 
     public function editar($id, EditarRequest $request)
@@ -177,6 +182,34 @@ class TarotistaController extends Controller
             $tarotista->horario = $horaInicioTxt . " - " . $horaFinTxt;
         }
         $tarotista->anios_exp = $request->input("anios_exp");
+        $tarotista->estado = $request->input("estado");
+
+        if ($request->input("remove_image") == "1") {
+            if (isset($tarotista->user->photo)) {
+                Storage::disk('public')->delete('users/' . $tarotista->user->photo);
+            }
+            $tarotista->user->photo = null;
+            $tarotista->user->save();
+        }
+
+        if ($request->has("image")) {
+            if (isset($tarotista->user->photo)) {
+                Storage::disk('public')->delete('users/' . $tarotista->user->photo);
+            }
+            $file = $request->file("image");
+            $file_name =  time() . "_" . $file->getClientOriginalName();
+            $file->move(public_path("storage/users"), $file_name);
+            
+            $path = explode($file_name,Storage::disk("public")->path("users/".$file_name));
+            
+
+            $pathFinal = Funciones::resizeImage($path[0], $file_name, "user", 500, 500);
+            $pathFinal = explode("/",$pathFinal);
+            $finalFileName = last($pathFinal);
+
+            $tarotista->user->photo = $finalFileName;
+            $tarotista->user->save();
+        }
         //$tarotista->fk_pais = $request->input("pais");
         $tarotista->save();
 

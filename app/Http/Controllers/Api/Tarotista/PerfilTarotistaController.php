@@ -274,7 +274,13 @@ class PerfilTarotistaController extends Controller
             $file = $request->file("photo");
             $file_name =  time() . "_" . $file->getClientOriginalName();
             $file->move(public_path("storage/users"), $file_name);
-            $tarotista->user->photo = $file_name;
+            
+            $path = explode($file_name,Storage::disk("public")->path("users/".$file_name));
+            $pathFinal = Funciones::resizeImage($path[0], $file_name, "user", 500, 500);
+            $pathFinal = explode("/",$pathFinal);
+            $finalFileName = last($pathFinal);
+
+            $tarotista->user->photo = $finalFileName;
             $tarotista->user->save();
         }
 
