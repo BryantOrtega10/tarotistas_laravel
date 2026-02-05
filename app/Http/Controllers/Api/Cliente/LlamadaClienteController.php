@@ -9,8 +9,10 @@ use App\Http\Utils\Funciones;
 use App\Models\ClienteTarotistaModel;
 use App\Models\ConfiguracionModel;
 use App\Models\LlamadasModel;
+use App\Models\SegmentosModel;
 use DateTime;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class LlamadaClienteController extends Controller
 {
@@ -63,7 +65,7 @@ class LlamadaClienteController extends Controller
 
         //Validar que el tarotista no este en una llamada
         $tarotista = $relacion->tarotista;
-        if ($tarotista->estado !== 3) {
+        if ($tarotista->estado !== 3 || $tarotista->estado_conexion !== 3) {
             return response()->json([
                 "success" => false,
                 "message" => "El tarotista no esta disponible en este momento",
@@ -260,6 +262,112 @@ class LlamadaClienteController extends Controller
 
 
     /**
+     * Sirve para iniciar el timer de un segmento de una llamada
+     * 
+     * @param int $idLlamada
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function iniciarSegmento($idLlamada, Request $request)
+    {
+        $cliente = $request->attributes->get('cliente');
+
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($cliente) {
+            $query->where('fk_cliente', $cliente->id);
+        })
+            ->where("id", $idLlamada)
+            ->first();
+
+        if (!isset($llamada)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se encuentra ninguna llamada con este ID",
+            ], 404);
+        }
+
+        if ($llamada->estado_llamada !== 3) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se puede enviar la respuesta de esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
+            ], 400);
+        }
+
+        $segmento = SegmentosModel::where("fk_llamada", "=", $llamada->id)
+            ->whereNull("fecha_fin")
+            ->first();
+        if (!isset($segmento)) {
+            $segmento = new SegmentosModel();
+            $segmento->fecha_inicio = date("Y-m-d H:i:s");
+            $segmento->fk_llamada = $llamada->id;
+            $segmento->save();
+        }
+
+        return response()->json([
+            "success" => true,
+            "message" => "Segmento de llamada iniciado correctamente",
+            "data" => [
+                "llamada" => $llamada,
+            ]
+        ]);
+    }
+
+    /**
+     * Sirve para iniciar el timer de un segmento de una llamada
+     * 
+     * @param int $idLlamada
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function terminarSegmento($idLlamada, Request $request)
+    {
+        $cliente = $request->attributes->get('cliente');
+
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($cliente) {
+            $query->where('fk_cliente', $cliente->id);
+        })
+            ->where("id", $idLlamada)
+            ->first();
+
+        if (!isset($llamada)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se encuentra ninguna llamada con este ID",
+            ], 404);
+        }
+
+        if ($llamada->estado_llamada !== 3) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se puede enviar la respuesta de esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
+            ], 400);
+        }
+
+        $segmento = SegmentosModel::where("fk_llamada", "=", $llamada->id)
+            ->whereNull("fecha_fin")
+            ->first();
+        if (isset($segmento)) {
+            $segmento->fecha_fin = date("Y-m-d H:i:s");
+            $fechaInicio = new DateTime($segmento->fecha_inicio);
+            $fechaFin = new DateTime($segmento->fecha_fin);
+            $intervalo = $fechaInicio->diff($fechaFin);
+            $tiempoSeg = ($intervalo->days * 24 * 60 * 60) + ($intervalo->h * 60 * 60) + ($intervalo->i * 60) + $intervalo->s;
+            $segmento->tiempo_seg = $tiempoSeg;
+            $segmento->save();
+        }
+
+        return response()->json([
+            "success" => true,
+            "message" => "Segmento de llamada terminado correctamente",
+            "data" => [
+                "llamada" => $llamada,
+            ]
+        ]);
+    }
+
+
+    /**
      * Sirve para cancelar una llamada que este en estado solicitada
      * 
      * @param int $idLlamada
@@ -275,7 +383,7 @@ class LlamadaClienteController extends Controller
             $query->where('fk_cliente', $cliente->id);
             $query->where('fk_tarotista', $idTarotista);
         })
-            ->whereIn("estado_llamada", [1, 2])
+            ->whereIn("estado_llamada", [1])
             ->first();
 
         if (!isset($llamada)) {
@@ -284,12 +392,25 @@ class LlamadaClienteController extends Controller
                 "message" => "No se encuentra ninguna llamada con este ID",
             ], 404);
         }
-
+        Log::info("Llamada encontrada ". $llamada->id);
         $llamada->estado_llamada = 2;
         $llamada->save();
 
-        $user = $request->user();
-        broadcast(new LlamadaEvent($llamada, $user))->toOthers();
+        $tarotista = $llamada->cliente_tarotista->tarotista;
+        //$user = $request->user();
+        if (isset($tarotista->user->token_push)) {
+            Log::info("El token se envio a ". $tarotista->user->token_push);
+            Funciones::sendNotification($tarotista->user->token_push, "Nueva llamada cancelada", "El cliente canceló la llamada antes de que la aceptaras", [
+                "relacion_id" => $llamada->fk_cliente_tarotista,
+                "llamada_id" => $llamada->id,
+                "accion" => "cancelada",
+            ]);
+        }
+        else{
+            Log::info("No se recibio el token de ". $tarotista->user);
+        }
+
+        //broadcast(new LlamadaEvent($llamada, $user))->toOthers();
 
         return response()->json([
             "success" => true,
@@ -334,13 +455,28 @@ class LlamadaClienteController extends Controller
 
         $llamada->fecha_fin = date("Y-m-d H:i:s");
 
-        $fechaInicio = new DateTime($llamada->fecha_inicio);
-        $fechaFin = new DateTime($llamada->fecha_fin);
-        $intervalo = $fechaInicio->diff($fechaFin);
-        $tiempoMins = ($intervalo->days * 24 * 60) + ($intervalo->h * 60) + $intervalo->i;
+        $segmento = SegmentosModel::where("fk_llamada", "=", $llamada->id)
+            ->whereNull("fecha_fin")
+            ->first();
+        if (isset($segmento)) {
+            $segmento->fecha_fin = date("Y-m-d H:i:s");
+            $fechaInicio = new DateTime($segmento->fecha_inicio);
+            $fechaFin = new DateTime($segmento->fecha_fin);
+            $intervalo = $fechaInicio->diff($fechaFin);
+            $tiempoSeg = ($intervalo->days * 24 * 60 * 60) + ($intervalo->h * 60 * 60) + ($intervalo->i * 60) + $intervalo->s;
+            $segmento->tiempo_seg = $tiempoSeg;
+            $segmento->save();
+        }
 
-        $llamada->tiempo_mins = $tiempoMins;
-        $llamada->subtotal = $tiempoMins * $llamada->tarifa;
+
+        $sumaSegmentos = SegmentosModel::selectRaw("SUM(tiempo_seg) as sumaTiempo")
+            ->where("fk_llamada", "=", $llamada->id)
+            ->whereNotNull("fecha_fin")
+            ->first();
+            
+        $sumaTiempoMins = ($sumaSegmentos?->sumaTiempo ?? 0) / 60;
+        $llamada->tiempo_mins = round($sumaTiempoMins, 2);
+        $llamada->subtotal = $sumaTiempoMins * $llamada->tarifa;
         $llamada->comision = $llamada->subtotal * $llamada->por_comision;
         $llamada->total = $llamada->subtotal - $llamada->comision;
         $llamada->estado_llamada = 4;
@@ -351,7 +487,9 @@ class LlamadaClienteController extends Controller
         $tarotista->save();
 
         $user = $request->user();
-        broadcast(new LlamadaEvent($llamada, $user));
+        broadcast(new LlamadaEvent($llamada, $user, [
+            "type" => 'call-end'
+        ]));
 
         //TODO: Enviar notificacion push al tarotista
         //TODO: Job de Braintree Paypal
@@ -365,6 +503,57 @@ class LlamadaClienteController extends Controller
         ]);
     }
 
+    /**
+     * Sirve para consultar cuanto tiempo ha durado una llamada y el segmento activo
+     * 
+     * @param int $idLlamada
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function tiempo($idLlamada, Request $request)
+    {
+        $cliente = $request->attributes->get('cliente');
+
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($cliente) {
+            $query->where('fk_cliente', $cliente->id);
+        })
+            ->where("id", $idLlamada)
+            ->first();
+
+        if (!isset($llamada)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se encuentra ninguna llamada con este ID",
+            ], 404);
+        }
+
+        if ($llamada->estado_llamada !== 3) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se puede finalizar esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
+            ], 400);
+        }
+        Log::info("Consultando segmento de la llamada con id = ".$llamada->id);
+        $segmento = SegmentosModel::where("fk_llamada", "=", $llamada->id)
+            ->whereNull("fecha_fin")
+            ->first();
+        Log::info("Segmento consultado id = ".$segmento?->id ?? "No hay nada");
+        
+        $sumaSegmentos = SegmentosModel::selectRaw("SUM(tiempo_seg) as sumaTiempo")
+            ->where("fk_llamada", "=", $llamada->id)
+            ->whereNotNull("fecha_fin")
+            ->first();
+        
+        return response()->json([
+            "success" => true,
+            "message" => "Llamada terminada correctamente",
+            "data" => [
+                "segmento" => $segmento,
+                "tiempoActual" => round($sumaSegmentos?->sumaTiempo ?? 0)
+            ]
+        ]);
+    }
 
     /**
      * Sirve para ver el detalle de una llamada 

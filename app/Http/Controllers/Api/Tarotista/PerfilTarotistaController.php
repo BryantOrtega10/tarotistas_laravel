@@ -11,6 +11,7 @@ use App\Models\EspecialidadesModel;
 use App\Models\EspecialidadesTatoristaModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use stdClass;
 
@@ -276,9 +277,11 @@ class PerfilTarotistaController extends Controller
             $file->move(public_path("storage/users"), $file_name);
             
             $path = explode($file_name,Storage::disk("public")->path("users/".$file_name));
+            Log::info("Se inicio optimizacion de foto ". $path[0]);
             $pathFinal = Funciones::resizeImage($path[0], $file_name, "user", 500, 500);
             $pathFinal = explode("/",$pathFinal);
             $finalFileName = last($pathFinal);
+            Log::info("Se intento cambiar la foto del usuario ". $finalFileName);
 
             $tarotista->user->photo = $finalFileName;
             $tarotista->user->save();

@@ -12,7 +12,6 @@ class Funciones
     public static function resizeImage($directorio, $nombre, $prefijo, $ancho, $alto)
     {
         $rutaImagenOriginal = $directorio . $nombre;
-        dd();
         $tamanio = getimagesize($rutaImagenOriginal);
         $width_gen = $tamanio[0];
         $height_gen = $tamanio[1];

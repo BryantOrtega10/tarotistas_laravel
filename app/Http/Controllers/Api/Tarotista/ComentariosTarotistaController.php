@@ -45,7 +45,6 @@ class ComentariosTarotistaController extends Controller
             ->get()
             ->reverse()
             ->values();
-        dd($ultimosComentarios);    
         
         $totalComments = ClienteTarotistaModel::query()
             ->joinSub($sub, 'ultimos_comentarios', function ($join) {

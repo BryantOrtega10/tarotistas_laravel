@@ -77,8 +77,10 @@ Route::group(["prefix" => "tarotista"], function () {
                 Route::post('/cancelar/{idLlamada}', [LlamadaTarotistaController::class, 'cancelar']);
                 Route::post('/finalizar/{idLlamada}', [LlamadaTarotistaController::class, 'finalizar']);
                 Route::get('/detalle/{idLlamada}', [LlamadaTarotistaController::class, 'detalle']);
-
+                Route::get('/tiempo/{idLlamada}', [LlamadaTarotistaController::class, 'tiempo']);
                 Route::get('/activa', [LlamadaTarotistaController::class, 'activa']);
+
+                Route::post('/segmento/terminar/{idLlamada}', [LlamadaTarotistaController::class, 'terminarSegmento']);
             });
         });
     });
@@ -117,15 +119,21 @@ Route::group(["prefix" => "cliente"], function () {
 
     Route::group(["prefix" => "/llamada", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
         Route::post('/solicitar/{idTarotista}', [LlamadaClienteController::class, 'solicitar']);
+        Route::post('/cancelar/{idTarotista}', [LlamadaClienteController::class, 'cancelar']);
+        
         Route::post('/sendOffer/{idLlamada}', [LlamadaClienteController::class, 'sendOffer']);
         Route::post('/ice/{idLlamada}', [LlamadaClienteController::class, 'ice']);
         Route::post('/answer/{idLlamada}', [LlamadaClienteController::class, 'answer']);
         
-        Route::post('/cancelar/{idTarotista}', [LlamadaClienteController::class, 'cancelar']);
         Route::post('/finalizar/{idLlamada}', [LlamadaClienteController::class, 'finalizar']);
         Route::post('/calificar/{idLlamada}', [LlamadaClienteController::class, 'calificar']);
 
         Route::get('/detalle/{idLlamada}', [LlamadaClienteController::class, 'detalle']);
+        Route::get('/tiempo/{idLlamada}', [LlamadaClienteController::class, 'tiempo']);
+
+        Route::post('/segmento/iniciar/{idLlamada}', [LlamadaClienteController::class, 'iniciarSegmento']);
+        Route::post('/segmento/terminar/{idLlamada}', [LlamadaClienteController::class, 'terminarSegmento']);
+
         Route::get('/activa', [LlamadaClienteController::class, 'activa']);
     });
 });

@@ -30,6 +30,10 @@ class LlamadasModel extends Model
         'type'
     ];
 
+    public function segmentos(){
+        return $this->hasMany(SegmentosModel::class, "fk_llamada", "id");
+    }
+
     public function cliente_tarotista(){
         return $this->belongsTo(ClienteTarotistaModel::class, "fk_cliente_tarotista", "id");
     }

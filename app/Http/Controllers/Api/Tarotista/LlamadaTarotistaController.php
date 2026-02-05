@@ -6,6 +6,7 @@ use App\Events\LlamadaEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Utils\Funciones;
 use App\Models\LlamadasModel;
+use App\Models\SegmentosModel;
 use DateTime;
 use Illuminate\Http\Request;
 
@@ -315,20 +316,37 @@ class LlamadaTarotistaController extends Controller
 
         if ($llamada->estado_llamada !== 3) {
             return response()->json([
-                "success" => false,
-                "message" => "No se puede finalizar esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
-            ], 400);
+                "success" => true,
+                "message" => "Llamada terminada correctamente anteriormente",
+                "data" => [
+                    "llamada" => $llamada,
+                ]
+            ]);
         }
 
         $llamada->fecha_fin = date("Y-m-d H:i:s");
+        $segmento = SegmentosModel::where("fk_llamada", "=", $llamada->id)
+            ->whereNull("fecha_fin")
+            ->first();
+        if (isset($segmento)) {
+            $segmento->fecha_fin = date("Y-m-d H:i:s");
+            $fechaInicio = new DateTime($segmento->fecha_inicio);
+            $fechaFin = new DateTime($segmento->fecha_fin);
+            $intervalo = $fechaInicio->diff($fechaFin);
+            $tiempoSeg = ($intervalo->days * 24 * 60 * 60) + ($intervalo->h * 60 * 60) + ($intervalo->i * 60) + $intervalo->s;
+            $segmento->tiempo_seg = $tiempoSeg;
+            $segmento->save();
+        }
 
-        $fechaInicio = new DateTime($llamada->fecha_inicio);
-        $fechaFin = new DateTime($llamada->fecha_fin);
-        $intervalo = $fechaInicio->diff($fechaFin);
-        $tiempoMins = ($intervalo->days * 24 * 60) + ($intervalo->h * 60) + $intervalo->i;
 
-        $llamada->tiempo_mins = $tiempoMins;
-        $llamada->subtotal = $tiempoMins * $llamada->tarifa;
+        $sumaSegmentos = SegmentosModel::selectRaw("SUM(tiempo_seg) as sumaTiempo")
+            ->where("fk_llamada", "=", $llamada->id)
+            ->whereNotNull("fecha_fin")
+            ->first();
+
+        $sumaTiempoMins = ($sumaSegmentos?->sumaTiempo ?? 0) / 60;
+        $llamada->tiempo_mins = round($sumaTiempoMins, 2);
+        $llamada->subtotal = $sumaTiempoMins * $llamada->tarifa;
         $llamada->comision = $llamada->subtotal * $llamada->por_comision;
         $llamada->total = $llamada->subtotal - $llamada->comision;
         $llamada->estado_llamada = 4;
@@ -337,7 +355,7 @@ class LlamadaTarotistaController extends Controller
         $tarotista->estado_conexion = 3;
         $tarotista->save();
         $user = $request->user();
-        
+
         broadcast(new LlamadaEvent($llamada, $user, [
             "type" => 'call-end'
         ]));
@@ -362,6 +380,114 @@ class LlamadaTarotistaController extends Controller
             ]
         ]);
     }
+
+
+    /**
+     * Sirve para consultar cuanto tiempo ha durado una llamada y el segmento activo
+     * 
+     * @param int $idLlamada
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function tiempo($idLlamada, Request $request)
+    {
+        $tarotista = $request->attributes->get('tarotista');
+
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
+            $query->where('fk_tarotista', $tarotista->id);
+        })
+            ->where("id", $idLlamada)
+            ->first();
+
+        if (!isset($llamada)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se encuentra ninguna llamada con este ID",
+            ], 404);
+        }
+
+        if ($llamada->estado_llamada !== 3) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se puede finalizar esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
+            ], 400);
+        }
+
+        $segmento = SegmentosModel::where("fk_llamada", "=", $llamada->id)
+            ->whereNull("fecha_fin")
+            ->first();
+
+        $sumaSegmentos = SegmentosModel::selectRaw("SUM(tiempo_seg) as sumaTiempo")
+            ->where("fk_llamada", "=", $llamada->id)
+            ->whereNotNull("fecha_fin")
+            ->first();
+
+        return response()->json([
+            "success" => true,
+            "message" => "Llamada terminada correctamente",
+            "data" => [
+                "segmento" => $segmento,
+                "tiempoActual" => $sumaSegmentos?->sumaTiempo ?? 0
+            ]
+        ]);
+    }
+
+
+    /**
+     * Sirve para iniciar el timer de un segmento de una llamada
+     * 
+     * @param int $idLlamada
+     * @param Illuminate\Http\Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function terminarSegmento($idLlamada, Request $request)
+    {
+        $tarotista = $request->attributes->get('tarotista');
+
+        $llamada = LlamadasModel::whereHas('cliente_tarotista', function ($query) use ($tarotista) {
+            $query->where('fk_tarotista', $tarotista->id);
+        })
+            ->where("id", $idLlamada)
+            ->first();
+
+        if (!isset($llamada)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se encuentra ninguna llamada con este ID",
+            ], 404);
+        }
+
+        if ($llamada->estado_llamada !== 3) {
+            return response()->json([
+                "success" => false,
+                "message" => "No se puede finalizar esta llamada actualmente esta en estado: " . $llamada->txt_estado_llamada,
+            ], 400);
+        }
+
+        $segmento = SegmentosModel::where("fk_llamada", "=", $llamada->id)
+            ->whereNull("fecha_fin")
+            ->first();
+        if (isset($segmento)) {
+            $segmento->fecha_fin = date("Y-m-d H:i:s");
+            $fechaInicio = new DateTime($segmento->fecha_inicio);
+            $fechaFin = new DateTime($segmento->fecha_fin);
+            $intervalo = $fechaInicio->diff($fechaFin);
+            $tiempoSeg = ($intervalo->days * 24 * 60 * 60) + ($intervalo->h * 60 * 60) + ($intervalo->i * 60) + $intervalo->s;
+            $segmento->tiempo_seg = $tiempoSeg;
+            $segmento->save();
+        }
+
+        return response()->json([
+            "success" => true,
+            "message" => "Segmento de llamada terminado correctamente",
+            "data" => [
+                "llamada" => $llamada,
+            ]
+        ]);
+    }
+
 
     /**
      * Sirve para ver el detalle de una llamada 
