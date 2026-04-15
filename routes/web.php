@@ -1,12 +1,17 @@
 <?php
 
+
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Web\BancosController;
+use App\Http\Controllers\Web\ConfiguracionController;
 use App\Http\Controllers\Web\EspecialidadesController;
+use App\Http\Controllers\Web\FrontWompiTransactionController;
 use App\Http\Controllers\Web\HistorialPagosController;
 use App\Http\Controllers\Web\PagosController;
 use App\Http\Controllers\Web\PaisesController;
+use App\Http\Controllers\Web\PaquetesController;
 use App\Http\Controllers\Web\TarotistaController;
+use App\Http\Controllers\Web\WompiTransactionController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
@@ -101,6 +106,28 @@ Route::group(['prefix' => 'paises', 'middleware' => ['auth', 'user-role:superadm
         Route::post("/modificar/{id}", [BancosController::class, 'modificar']);
         Route::post("/eliminar/{id}", [BancosController::class, 'eliminar'])->name("bancos.eliminar");
     });
-
-    
+   
 });
+
+
+Route::group(['prefix' => 'paquetes', 'middleware' => ['auth', 'user-role:superadmin']], function () {
+    Route::get("/", [PaquetesController::class, 'lista'])->name("paquetes.lista");
+    Route::get("/crear", [PaquetesController::class, 'mostrarCrear'])->name("paquetes.crear");
+    Route::post("/crear", [PaquetesController::class, 'crear']);
+    Route::get("/modificar/{id}", [PaquetesController::class, 'mostrarModificar'])->name("paquetes.modificar");
+    Route::post("/modificar/{id}", [PaquetesController::class, 'modificar']);
+    Route::post("/eliminar/{id}", [PaquetesController::class, 'eliminar'])->name("paquetes.eliminar");
+});
+
+Route::group(['prefix' => 'configuracion', 'middleware' => ['auth', 'user-role:superadmin']], function () {
+    Route::get("/", [ConfiguracionController::class, 'index'])->name("configuracion.index");
+    Route::post("/", [ConfiguracionController::class, 'modificar']);
+});
+
+
+Route::group(['prefix' => 'transacciones', 'middleware' => ['auth', 'user-role:superadmin']], function () {
+    Route::get("/generar/{uuid}", [WompiTransactionController::class, 'generarForm'])->name("web.wompi.generar");
+    Route::get("/respuesta", [WompiTransactionController::class, 'respuesta'])->name("web.wompi.respuesta");
+
+});
+

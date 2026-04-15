@@ -27,16 +27,12 @@ class LlamadaClienteController extends Controller
     public function solicitar($idTarotista, Request $request)
     {
         $cliente = $request->attributes->get('cliente');
-        //TODO: Validar con braintree que el metodo de pago sea valido
-        $medioPago = $cliente->token_payu !== null;
-
-        //Validar que el cliente tenga un metodo de pago
-        // if (!$medioPago) {
-        //     return response()->json([
-        //         "success" => false,
-        //         "message" => "El medio de pago no es valido, actualizalo para continuar",
-        //     ], 402);
-        // }
+        if (!isset($cliente->tokens) || $cliente->tokens <= 0) {
+            return response()->json([
+                "success" => false,
+                "message" => "No tienes tokens disponibles para realizar la llamada",
+            ], 402);
+        }
 
 
         $relacion = ClienteTarotistaModel::where('fk_tarotista', $idTarotista)

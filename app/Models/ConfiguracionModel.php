@@ -10,7 +10,8 @@ class ConfiguracionModel extends Model
     protected $table = 'configuracion';
 
     protected $fillable = [
-        'precio_min',
+        'token_min',
+        'valor_min',
         'por_comision',
         'fk_last_user'
     ];

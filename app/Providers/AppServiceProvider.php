@@ -27,6 +27,8 @@ class AppServiceProvider extends ServiceProvider
             'historialPagos',
             'paises',
             'especialidades',
+            'paquetes',
+            'configuracion',
         ];
 
         foreach ($superadmin_permissions as $superadmin_permission) {

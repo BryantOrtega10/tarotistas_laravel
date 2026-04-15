@@ -29,7 +29,7 @@ class PaisesController extends Controller
         $pais->nombre = $request->input("nombre");
         if ($request->has("bandera")) {
             $file = $request->file("bandera");
-            $file_name =  "bandera-" . $pais->id. ".jpg";
+            $file_name =  "bandera-" . $pais->nombre. ".jpg";
             $file->move(public_path("storage/paises"), $file_name);
             
             $path = explode($file_name,Storage::disk("public")->path("paises/".$file_name));
@@ -58,7 +58,7 @@ class PaisesController extends Controller
                 Storage::disk('public')->delete('paises/' . $pais->bandera);
             }
             $file = $request->file("bandera");
-            $file_name =  "bandera-" . $pais->id. ".jpg";
+            $file_name =  "bandera-" . $pais->nombre. ".jpg";
             $file->move(public_path("storage/paises"), $file_name);
 
             $path = explode($file_name,Storage::disk("public")->path("paises/".$file_name));

@@ -12,22 +12,22 @@ class LlamadasModel extends Model
     protected $fillable = [
         'fecha_inicio',
         'fecha_fin',
-        'tarifa',
         'por_comision',
         'tiempo_mins',
         'subtotal',
         'comision',
         'total',
         'estado_llamada',
-        'estado_pago_cli',
         'estado_pago_tar',
-        'respuesta_payu',
         'calificacion',
         'comentario',
         'respuesta_com',
         'fk_cliente_tarotista',
         'fk_pago',
-        'type'
+        'type',
+        'tarifa_valor_min',
+        'tarifa_token_min',
+        'tokens_gastados',
     ];
 
     public function segmentos(){
@@ -46,12 +46,6 @@ class LlamadasModel extends Model
     public function txtEstadoLlamada(): Attribute {
         return Attribute::make(
             get: fn () => [1 => "Solicitada", 2 => "Cancelada", 3 => "En llamada", 4 => "Terminada"][$this->estado_llamada]
-        );
-    }
-
-    public function txtEstadoPagoCliente(): Attribute {
-        return Attribute::make(
-            get: fn () => [1 => "Pago Innecesario", 2 => "Pendiente", 3 => "Pagado", 4 => "Rechazado"][$this->estado_pago_cli]
         );
     }
 

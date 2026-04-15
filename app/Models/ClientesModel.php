@@ -11,7 +11,7 @@ class ClientesModel extends Model
     protected $fillable = [
         'nombre',
         'fecha_nacimiento',
-        'token_payu',
+        'tokens',
         'fk_user',
     ];
 

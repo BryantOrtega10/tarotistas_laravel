@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Cliente\LlamadaClienteController;
 use App\Http\Controllers\Api\Cliente\LoginClienteController;
 use App\Http\Controllers\Api\Cliente\PerfilClienteController;
 use App\Http\Controllers\Api\Cliente\ConfiguracionController;
+use App\Http\Controllers\Api\Cliente\WompiTransactionController;
 use App\Http\Controllers\Api\EspecialidadesController;
 use App\Http\Controllers\Api\PaisesController;
 use App\Http\Controllers\Api\Tarotista\BancosController;
@@ -109,7 +110,8 @@ Route::group(["prefix" => "cliente"], function () {
     Route::group(["prefix" => "/mi-perfil", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
         Route::get('/', [PerfilClienteController::class, 'obtenerMiPerfil']);
         Route::post('/', [PerfilClienteController::class, 'actualizarMiPerfil']);
-        Route::get('/medio-pago', [PerfilClienteController::class, 'obtenerMedioPago']);
+
+        Route::get('/mis-tokens', [PerfilClienteController::class, 'obtenerMisTokens']);
     });
 
     Route::group(["prefix" => "/cobros", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
@@ -135,6 +137,11 @@ Route::group(["prefix" => "cliente"], function () {
         Route::post('/segmento/terminar/{idLlamada}', [LlamadaClienteController::class, 'terminarSegmento']);
 
         Route::get('/activa', [LlamadaClienteController::class, 'activa']);
+    });
+
+    Route::group(["prefix" => "/wompi", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
+        Route::get('/', [WompiTransactionController::class, 'index']);
+        
     });
 });
 

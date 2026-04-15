@@ -32,7 +32,7 @@ class TestDataSeeder extends Seeder
             $client = ClientesModel::create([
                 'nombre' => 'Cliente '.$i.' Prueba',
                 'fecha_nacimiento' => '1994-10-10',
-                'token_payu' => '',
+                'tokens' => 10,
                 'fk_user' => $user->id,
             ]);
 

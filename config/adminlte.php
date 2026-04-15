@@ -311,7 +311,7 @@ return [
             'icon' => 'fas fa-users',
         ],
         [
-            'text' => 'Pagos',
+            'text' => 'Pagos Pendientes',
             'can' => 'web.pagos',
             'route' => 'pagos.pendientes',
             'active' => ['pagos*'],
@@ -319,10 +319,10 @@ return [
         ],
         [
             'text' => 'Historial de Pagos',
-            'can' => 'web.historialPagos.lista',
+            'can' => 'web.historialPagos',
             'route' => 'historialPagos.lista',
             'active' => ['historial-pagos*'],
-            'icon' => 'fas fa-file-invoice-dollar',
+            'icon' => 'fas fa-history',
         ],
         [
             'text' => 'Especialidades',
@@ -337,6 +337,20 @@ return [
             'route' => 'paises.lista',
             'active' => ['paises*'],
             'icon' => 'fas fa-university',
+        ],
+        [
+            'text' => 'Paquetes',
+            'can' => 'web.paquetes',
+            'route' => 'paquetes.lista',
+            'active' => ['paquetes*'],
+            'icon' => 'fas fa-coins',
+        ],
+        [
+            'text' => 'Configuración',
+            'can' => 'web.configuracion',
+            'route' => 'configuracion.index',
+            'active' => ['configuracion*'],
+            'icon' => 'fas fa-cogs',
         ],
     ],
 

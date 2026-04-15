@@ -57,9 +57,9 @@ class PerfilClienteController extends Controller
             $file_name =  time() . "_" . $file->getClientOriginalName();
             $file->move(public_path("storage/users"), $file_name);
 
-            $path = explode($file_name,Storage::disk("public")->path("users/".$file_name));
+            $path = explode($file_name, Storage::disk("public")->path("users/" . $file_name));
             $pathFinal = Funciones::resizeImage($path[0], $file_name, "user", 500, 500);
-            $pathFinal = explode("/",$pathFinal);
+            $pathFinal = explode("/", $pathFinal);
             $finalFileName = last($pathFinal);
 
             $cliente->user->photo = $finalFileName;
@@ -87,25 +87,26 @@ class PerfilClienteController extends Controller
         ]);
     }
 
+
     /**
-     * Sirve para obtener los datos del medio de pago del cliente
+     * Sirve para actualizar los datos básicos del tarotista
      * 
      * @param Illuminate\Http\Request $request
      * 
      * @return \Illuminate\Http\JsonResponse
      */
-    public function obtenerMedioPago(Request $request)
+
+    public function obtenerMisTokens(Request $request)
     {
         $cliente = $request->attributes->get('cliente');
-        //TODO: Conexion con SDK Braintree Paypal para obtener el detalle de un medio de pago
-        $medioPago = $cliente->token_payu !== null;
-
         return response()->json([
             "success" => true,
-            "message" => "Datos del medio de pago consultados correctamente",
+            "message" => "Tokens consultados correctamente",
             "data" => [
-                "tieneMedioPago" => $medioPago
+                "tokens" => $cliente->tokens
             ]
         ]);
     }
+
+    
 }
