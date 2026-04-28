@@ -33,7 +33,7 @@ class WompiTransactionsModel extends Model
     public function txtStatus(): Attribute
     {
         return Attribute::make(
-            get: fn() => [0 => "Pendiente", 1 => "Pagando", 2 => "Aprobado", 3 => "Rechazado", 4 => "Anulado", 5 => "Error"][$this->status]
+            get: fn() => [0 => "Pendiente", 1 => "Verificando pago", 2 => "Aprobado", 3 => "Rechazado", 4 => "Anulado", 5 => "Error"][$this->status]
         );
     }
 }

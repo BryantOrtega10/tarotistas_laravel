@@ -35,10 +35,10 @@ Route::get('/', function () {
 
 Route::post('/login', [LoginController::class, 'login']);
 
-Route::get('/migrate', function() {
+Route::get('/migrate', function () {
     $exitCode = Artisan::call('migrate');
-    
-    return '<h3>Migraci&oacute;n completada '.$exitCode.'</h3>';
+
+    return '<h3>Migraci&oacute;n completada ' . $exitCode . '</h3>';
 });
 
 Route::get("storage-link", function () {
@@ -50,6 +50,13 @@ Route::get("storage-link", function () {
 
 Route::get("phpinfo", function () {
     phpinfo();
+});
+
+Route::get('/cache', function () {
+    $exitCode = Artisan::call('route:clear');
+    $exitCode = Artisan::call('view:clear');
+    $exitCode = Artisan::call('config:cache');
+    return '<h3>Cache eliminado</h3>';
 });
 
 Route::group(['prefix' => 'tarotistas', 'middleware' => ['auth', 'user-role:superadmin']], function () {
@@ -66,8 +73,8 @@ Route::group(['prefix' => 'tarotistas', 'middleware' => ['auth', 'user-role:supe
 });
 
 Route::group(['prefix' => 'pagos', 'middleware' => ['auth', 'user-role:superadmin']], function () {
-    Route::get("/pendientes", [PagosController::class, 'verPendientes'])->name("pagos.pendientes");
-    Route::post("/pendientes/datatable", [PagosController::class, 'datatablePendientes'])->name("pagos.generar.datatable");
+    Route::get("/pendientes", [PagosController::class, 'lista'])->name("pagos.pendientes");
+    Route::post("/pendientes/datatable", [PagosController::class, 'datatableAjax'])->name("pagos.pendientes.datatable");
     Route::get("/generar/{idTarotista}", [PagosController::class, 'mostrarGenerar'])->name("pagos.generar");
     Route::post("/generar/{idTarotista}", [PagosController::class, 'generar']);
 });
@@ -75,9 +82,9 @@ Route::group(['prefix' => 'pagos', 'middleware' => ['auth', 'user-role:superadmi
 
 Route::group(['prefix' => 'historial-pagos', 'middleware' => ['auth', 'user-role:superadmin']], function () {
 
-    Route::get("/historial", [HistorialPagosController::class, 'mostrarHistorial'])->name("historialPagos.lista");
-    Route::post("/historial/datatable", [HistorialPagosController::class, 'datatableHistorial'])->name("historialPagos.datatable");
-    Route::get("/historial/{idPago}", [HistorialPagosController::class, 'mostrarDetalleHistorial'])->name("historialPagos.detalle");
+    Route::get("/historial", [HistorialPagosController::class, 'lista'])->name("historialPagos.lista");
+    Route::post("/historial/datatable", [HistorialPagosController::class, 'datatableAjax'])->name("historialPagos.datatable");
+    Route::get("/historial/{idTarotista}", [HistorialPagosController::class, 'mostrarDetalleHistorial'])->name("historialPagos.detalle");
 });
 
 Route::group(['prefix' => 'especialidades', 'middleware' => ['auth', 'user-role:superadmin']], function () {
@@ -106,7 +113,6 @@ Route::group(['prefix' => 'paises', 'middleware' => ['auth', 'user-role:superadm
         Route::post("/modificar/{id}", [BancosController::class, 'modificar']);
         Route::post("/eliminar/{id}", [BancosController::class, 'eliminar'])->name("bancos.eliminar");
     });
-   
 });
 
 
@@ -125,9 +131,13 @@ Route::group(['prefix' => 'configuracion', 'middleware' => ['auth', 'user-role:s
 });
 
 
-Route::group(['prefix' => 'transacciones', 'middleware' => ['auth', 'user-role:superadmin']], function () {
+Route::group(['prefix' => 'transacciones'], function () {
     Route::get("/generar/{uuid}", [WompiTransactionController::class, 'generarForm'])->name("web.wompi.generar");
     Route::get("/respuesta", [WompiTransactionController::class, 'respuesta'])->name("web.wompi.respuesta");
 
-});
 
+    Route::post('/webhook', [WompiTransactionController::class, 'webhook'])
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+    Route::post('/webhook-sandbox', [WompiTransactionController::class, 'webhookSandbox'])
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+});

@@ -346,11 +346,19 @@ class LlamadaTarotistaController extends Controller
 
         $sumaTiempoMins = ($sumaSegmentos?->sumaTiempo ?? 0) / 60;
         $llamada->tiempo_mins = round($sumaTiempoMins, 2);
-        $llamada->subtotal = $sumaTiempoMins * $llamada->tarifa;
-        $llamada->comision = $llamada->subtotal * $llamada->por_comision;
+        $llamada->subtotal = $sumaTiempoMins * $llamada->tarifa_valor_min;
+        $llamada->comision = $llamada->subtotal * $llamada->por_comision / 100;
         $llamada->total = $llamada->subtotal - $llamada->comision;
         $llamada->estado_llamada = 4;
+        $llamada->tokens_gastados = intval($sumaTiempoMins * $llamada->tarifa_token_min);
         $llamada->save();
+
+        //Restar tokens
+        $relacion = $llamada->cliente_tarotista;
+        $cliente = $relacion->cliente;
+
+        $cliente->tokens = $cliente->tokens - intval($llamada->tokens_gastados);
+        $cliente->save();
 
         $tarotista->estado_conexion = 3;
         $tarotista->save();
@@ -360,17 +368,13 @@ class LlamadaTarotistaController extends Controller
             "type" => 'call-end'
         ]));
 
-        //TODO: Enviar notificacion push al cliente
-        $relacion = $llamada->cliente_tarotista;
-        if (isset($cliente->user->token_push)) {
+        if (isset($cliente->user->token_push)) {        
             Funciones::sendNotification($cliente->user->token_push, "Llamada finalizada", "Llamada finalizada por el tarotista", [
                 "relacion_id" => $relacion->id,
                 "llamada_id" => $llamada->id,
                 "accion" => "finalizada",
             ]);
         }
-
-        //TODO: Job de Braintree Paypal
 
         return response()->json([
             "success" => true,

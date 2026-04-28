@@ -11,7 +11,7 @@ class GenerarPagoRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,8 @@ class GenerarPagoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'valor' => 'required|min:1',
+            'descripcion' => 'required|string',
         ];
     }
 }

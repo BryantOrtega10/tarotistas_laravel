@@ -12,7 +12,7 @@ class ApiRequest extends FormRequest{
     {
         throw new HttpResponseException(response()->json([
             'success' => false,
-            'message' => 'Datos inválidos.',
+            'message' => 'Datos inválidos.\n Error: '. $validator->errors()->first(),
             'errors' => $validator->errors(),
         ], 422));
     }

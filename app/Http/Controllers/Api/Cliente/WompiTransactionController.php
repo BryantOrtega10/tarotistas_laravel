@@ -17,7 +17,7 @@ class WompiTransactionController extends Controller
 
         $cliente = $request->attributes->get('cliente');
 
-        $paquete = PaquetesModel::where("id", "=", $request->query("paquete"))->first();
+        $paquete = PaquetesModel::where("id", "=", $request->input("paquete"))->first();
         
         $transaction = new WompiTransactionsModel();
         $uuid = Str::uuid();

@@ -34,7 +34,7 @@
                         <div class="form-group">
                             <label>Bandera Actual:</label><br>
                             @if (isset($pais->bandera) && $pais->bandera)
-                                <img src="{{ Storage::url('paquetes/' . $paquete->bandera) }}" width="64" />
+                                <img src="{{ Storage::url('paises/' . $pais->bandera) }}" width="64" />
                             @else
                                 Sin imagen
                             @endisset

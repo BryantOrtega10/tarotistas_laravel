@@ -72,10 +72,10 @@ class LlamadaClienteController extends Controller
 
 
         $llamada = new LlamadasModel();
-        $llamada->tarifa = $config->precio_min;
+        $llamada->tarifa_valor_min = $config->valor_min;
+        $llamada->tarifa_token_min = $config->token_min;
         $llamada->por_comision = $config->por_comision;
         $llamada->estado_llamada = 1;
-        $llamada->estado_pago_cli = 1;
         $llamada->estado_pago_tar = 1;
         $llamada->fk_cliente_tarotista = $relacion->id;
         $llamada->save();
@@ -472,11 +472,15 @@ class LlamadaClienteController extends Controller
             
         $sumaTiempoMins = ($sumaSegmentos?->sumaTiempo ?? 0) / 60;
         $llamada->tiempo_mins = round($sumaTiempoMins, 2);
-        $llamada->subtotal = $sumaTiempoMins * $llamada->tarifa;
-        $llamada->comision = $llamada->subtotal * $llamada->por_comision;
+        $llamada->subtotal = $sumaTiempoMins * $llamada->tarifa_valor_min;
+        $llamada->comision = $llamada->subtotal * $llamada->por_comision / 100;
         $llamada->total = $llamada->subtotal - $llamada->comision;
         $llamada->estado_llamada = 4;
+        $llamada->tokens_gastados = intval($sumaTiempoMins * $llamada->tarifa_token_min);
         $llamada->save();
+
+        $cliente->tokens = $cliente->tokens - $llamada->tokens_gastados;
+        $cliente->save();
 
         $tarotista = $llamada->cliente_tarotista->tarotista;
         $tarotista->estado_conexion = 3;
@@ -487,8 +491,14 @@ class LlamadaClienteController extends Controller
             "type" => 'call-end'
         ]));
 
-        //TODO: Enviar notificacion push al tarotista
-        //TODO: Job de Braintree Paypal
+        if (isset($tarotista->user->token_push)) {        
+            Funciones::sendNotification($tarotista->user->token_push, "Llamada finalizada", "Llamada finalizada por el cliente", [
+                "relacion_id" => $llamada->cliente_tarotista->id,
+                "llamada_id" => $llamada->id,
+                "accion" => "finalizada",
+            ]);
+        }
+
 
         return response()->json([
             "success" => true,

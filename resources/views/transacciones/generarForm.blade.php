@@ -65,7 +65,7 @@
             <input type="hidden" name="reference" value="{{ $wompiFormData['reference'] }}" />
             <input type="hidden" name="signature:integrity" value="{{ $wompiFormData['signature'] }}" />
             <!-- OPCIONALES -->
-            <input type="hidden" name="redirect-url" value="URL_REDIRECCION" value="{{ $wompiFormData['redirect-url'] }}" />
+            <input type="hidden" name="redirect-url" value="{{ $wompiFormData['redirect-url'] }}" />
             <input type="hidden" name="customer-data:email" value="{{ $wompiFormData['customer-data']['email'] }}" />
             <input type="hidden" name="customer-data:full-name" value="{{ $wompiFormData['customer-data']['full-name'] }}" />
             

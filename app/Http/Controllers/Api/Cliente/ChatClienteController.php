@@ -166,6 +166,7 @@ class ChatClienteController extends Controller
                 "mensajes" => $mensajes,
                 "mensajes_gratis" => $relacion->mensajes_gratis,
                 "tarotista" => [
+                    "id" => $relacion->tarotista->id,
                     "nombre" => $relacion->tarotista->nombre,
                     "estado_conexion" => $relacion->tarotista->estado_conexion,
                     "user" => [

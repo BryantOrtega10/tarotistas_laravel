@@ -14,8 +14,9 @@ class ConfigDefaultSeeder extends Seeder
     public function run(): void
     {
         ConfiguracionModel::create([
-            'precio_min' => 100,
-            'por_comision' => 0.1,
+            'token_min' => 1,
+            'valor_min' => 100,
+            'por_comision' => 10,
             'fk_last_user' => 1,
         ]);
     }

@@ -7,6 +7,7 @@ use App\Models\ConfiguracionModel;
 use App\Models\WompiTransactionsModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class WompiTransactionController extends Controller
 {
@@ -24,7 +25,7 @@ class WompiTransactionController extends Controller
         if (!isset($transaction)) {
             return response()->json([
                 "success" => false,
-                "message" => 'Transacción no encontrada con id:'.$uuid,
+                "message" => 'Transacción no encontrada con id:' . $uuid,
             ], 403);
         }
         $transaction->status = 1; //Pagando
@@ -37,7 +38,7 @@ class WompiTransactionController extends Controller
 
         $firmaIntegridad = $referencia . $monto . $moneda . $secreto;
         $firmaHasheada = hash("sha256", $firmaIntegridad);
-        
+
         $cliente = $transaction->cliente;
 
 
@@ -55,7 +56,7 @@ class WompiTransactionController extends Controller
         ];
 
 
-        return view('transacciones.generarForm',[
+        return view('transacciones.generarForm', [
             'wompiFormData' => $wompiFormData,
             'paquete' => $transaction->paquete
         ]);
@@ -67,7 +68,7 @@ class WompiTransactionController extends Controller
         $transactionId = $request->query('id');
 
         if (!$transactionId) {
-            return view('transacciones.respuesta', [
+            return view('transacciones.error', [
                 'error' => 'No se recibió el ID de la transacción'
             ]);
         }
@@ -75,7 +76,7 @@ class WompiTransactionController extends Controller
         $isWompiTest = env("WOMPI_TEST");
         $url = "https://production.wompi.co/v1/transactions/" . $transactionId;
 
-        if ($isWompiTest === "true") {
+        if ($isWompiTest) {
             $url = "https://sandbox.wompi.co/v1/transactions/" . $transactionId;
         }
 
@@ -101,6 +102,177 @@ class WompiTransactionController extends Controller
         }
 
 
-        return view('transacciones.respuesta', $wompiData);
+
+        return view('transacciones.respuesta', [
+            "wompiData" => $wompiData,
+            "transaction" => $transaction,
+        ]);
+    }
+
+    public function webhook(Request $request)
+    {
+        $payload = $request->all();
+
+        $properties = $payload['signature']['properties'] ?? [];
+        $data = $payload['data'] ?? [];
+        $timestamp = $payload['timestamp'] ?? null;
+        $checksumSignature = $payload['signature']['checksum'] ?? "";
+
+        //Paso 1
+        $concatenated = '';
+        foreach ($properties as $property) {
+            $keys = explode('.', $property);
+            $value = $data;
+            foreach ($keys as $key) {
+                if (!isset($value[$key])) {
+                    $value = null;
+                    break;
+                }
+                $value = $value[$key];
+            }
+
+            $concatenated .= (string) $value;
+        }
+        //Paso 2
+        $concatenated .= $timestamp;
+        //Paso 3
+        $concatenated .= env('WOMPI_EVENTS_KEY');
+        //Paso 4
+        $checksum = hash("sha256", $concatenated);
+
+        if (!hash_equals($checksumSignature, $checksum)) {
+            return response()->json(['error' => 'Firma no valida'], 403);
+        }
+
+
+        $event = $payload['event'] ?? null;
+
+        if ($event !== 'transaction.updated') {
+            return response()->json(['message' => 'Evento ignorado']);
+        }
+
+        $data = $payload['data']['transaction'] ?? null;
+
+        if (!$data) {
+            return response()->json(['error' => 'Sin datos'], 400);
+        }
+
+        $reference = $data['reference'];
+
+        $transaction = WompiTransactionsModel::where('uuid', $reference)->first();
+
+        if (!$transaction) {
+            return response()->json(['error' => 'Transacción no encontrada'], 404);
+        }
+
+        // Mapear estado Wompi
+        $statusMap = [
+            'PENDING' => 0,
+            'APPROVED' => 2,
+            'DECLINED' => 3,
+            'VOIDED' => 4,
+            'ERROR' => 5,
+        ];
+
+        $transaction->status = $statusMap[$data['status']] ?? 5;
+
+        // Guardar respuesta completa
+        $transaction->last_wompi_response = json_encode($data, JSON_UNESCAPED_UNICODE);
+
+        $transaction->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function webhookSandbox(Request $request)
+    {
+        $payload = $request->all();
+        Log::info('Wompi Webhook Payload:', $payload);
+        Log::info('Wompi Webhook Debug', [
+            'event' => $payload['event'] ?? null,
+            'reference' => $payload['data']['transaction']['reference'] ?? null,
+            'status' => $payload['data']['transaction']['status'] ?? null,
+            'transaction_id' => $payload['data']['transaction']['id'] ?? null,
+            'timestamp' => $payload['timestamp'] ?? null,
+            'full_payload' => $payload
+        ]);
+        $properties = $payload['signature']['properties'] ?? [];
+        $data = $payload['data'] ?? [];
+        $timestamp = $payload['timestamp'] ?? null;
+        $checksumSignature = $payload['signature']['checksum'] ?? "";
+
+        //Paso 1
+        $concatenated = '';
+        foreach ($properties as $property) {
+            $keys = explode('.', $property);
+            $value = $data;
+            foreach ($keys as $key) {
+                if (!isset($value[$key])) {
+                    $value = null;
+                    break;
+                }
+                $value = $value[$key];
+            }
+
+            $concatenated .= (string) $value;
+        }
+        //Paso 2
+        $concatenated .= $timestamp;
+        //Paso 3
+        $concatenated .= env('WOMPI_EVENTS_KEY');
+        //Paso 4
+        $checksum = hash("sha256", $concatenated);
+
+        if (!hash_equals($checksumSignature, $checksum)) {
+            return response()->json(['error' => 'Firma no valida'], 403);
+        }
+
+
+        $event = $payload['event'] ?? null;
+
+        if ($event !== 'transaction.updated') {
+            return response()->json(['message' => 'Evento ignorado']);
+        }
+
+        $data = $payload['data']['transaction'] ?? null;
+
+        if (!$data) {
+            return response()->json(['error' => 'Sin datos'], 400);
+        }
+
+        $reference = $data['reference'];
+
+        $transaction = WompiTransactionsModel::where('uuid', $reference)->first();
+
+        if (!$transaction) {
+            return response()->json(['error' => 'Transacción no encontrada'], 404);
+        }
+
+        // Mapear estado Wompi
+        $statusMap = [
+            'PENDING' => 0,
+            'APPROVED' => 2,
+            'DECLINED' => 3,
+            'VOIDED' => 4,
+            'ERROR' => 5,
+        ];
+
+        $transaction->status = $statusMap[$data['status']] ?? 5;
+
+        // Guardar respuesta completa
+        $transaction->last_wompi_response = json_encode($data, JSON_UNESCAPED_UNICODE);
+
+        $transaction->save();
+
+        if($transaction->status === 2){
+            //Agregar tokens a los clientes
+            $cliente = $transaction->cliente;
+            $cliente->tokens += $transaction->tokens;
+            $cliente->save();
+        }
+
+        
+
+        return response()->json(['success' => true]);
     }
 }

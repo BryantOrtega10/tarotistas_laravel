@@ -24,7 +24,6 @@ class CobrosController extends Controller
         
         $llamadas = LlamadasModel::with(["cliente_tarotista.tarotista.user:id,name,photo"])
             ->where("estado_llamada","=",4)
-            ->where("estado_pago_cli","=",3)
              ->whereHas('cliente_tarotista', function ($query) use ($cliente) {
                 $query->where('fk_cliente', $cliente->id);
             })
@@ -34,7 +33,7 @@ class CobrosController extends Controller
 
         $data = $llamadas->map(function ($llamada) {
             $item = new stdClass;
-            $item->tarifa = $llamada->tarifa;
+            $item->tarifa = $llamada->tarifa_valor_min;
             $item->tiempo_mins = $llamada->tiempo_mins;
             $item->total = $llamada->total;
             $item->tarotista = $llamada->tarotista->user;
@@ -74,7 +73,7 @@ class CobrosController extends Controller
             "success" => true,
             "message" => "Cobro consultado correctamente",
             "data" => [
-                "tarifa" => $llamada->tarifa,
+                "tarifa" => $llamada->tarifa_valor_min,
                 "tiempo_mins" => $llamada->tiempo_mins,
                 "total" => $llamada->total,
                 "tarotista" => $llamada->tarotista->user,

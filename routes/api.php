@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Cliente\LlamadaClienteController;
 use App\Http\Controllers\Api\Cliente\LoginClienteController;
 use App\Http\Controllers\Api\Cliente\PerfilClienteController;
 use App\Http\Controllers\Api\Cliente\ConfiguracionController;
+use App\Http\Controllers\Api\Cliente\PaquetesController;
 use App\Http\Controllers\Api\Cliente\WompiTransactionController;
 use App\Http\Controllers\Api\EspecialidadesController;
 use App\Http\Controllers\Api\PaisesController;
@@ -140,8 +141,11 @@ Route::group(["prefix" => "cliente"], function () {
     });
 
     Route::group(["prefix" => "/wompi", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
-        Route::get('/', [WompiTransactionController::class, 'index']);
-        
+        Route::post('/generate-link', [WompiTransactionController::class, 'index']);
+    });
+
+     Route::group(["prefix" => "/paquetes", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
+        Route::get('/', [PaquetesController::class, 'index']);
     });
 });
 
