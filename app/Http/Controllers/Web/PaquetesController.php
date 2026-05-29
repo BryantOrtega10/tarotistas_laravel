@@ -29,6 +29,8 @@ class PaquetesController extends Controller
         $paquete->nombre = $request->input("nombre");
         $paquete->tokens = $request->input("tokens");
         $paquete->valor = $request->input("valor");
+        $paquete->google_token = $request->input("google_token");
+        $paquete->apple_token = $request->input("apple_token");
         if ($request->has("imagen")) {
             $file = $request->file("imagen");
             $file_name =  "paquete-tokens-" . time() . ".jpg";
@@ -59,6 +61,8 @@ class PaquetesController extends Controller
         $paquete->nombre = $request->input("nombre");
         $paquete->tokens = $request->input("tokens");
         $paquete->valor = $request->input("valor");
+        $paquete->google_token = $request->input("google_token");
+        $paquete->apple_token = $request->input("apple_token");
         if ($request->has("imagen")) {
             if (isset($paquete->imagen)) {
                 Storage::disk('public')->delete('paquetes/' . $paquete->imagen);

@@ -16,6 +16,8 @@ class PaquetesModel extends Model
         'estado',
         'valor',
         'fk_last_user',
+        'google_token',
+        'apple_token',
     ];
 
     public function last_user(){

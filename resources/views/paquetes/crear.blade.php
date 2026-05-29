@@ -53,9 +53,31 @@
                     </div>
                     <div class="col-md-3 col-12">
                         <div class="form-group">
-                            <label for="valor">Valor (*):</label>
+                            <label for="valor">Valor Wompi(*):</label>
                             <input type="number" min="1" class="form-control @error('valor') is-invalid @enderror" id="valor" name="valor" placeholder="Valor:" value="{{ old('valor') }}">
                             @error('valor')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-12">
+                        <div class="form-group">
+                            <label for="google_token">ID Play Store (*):</label>
+                            <input type="text" class="form-control @error('google_token') is-invalid @enderror" id="google_token" name="google_token" placeholder="ID Play Store:" value="{{ old('google_token') }}">
+                            @error('google_token')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-12">
+                        <div class="form-group">
+                            <label for="apple_token">ID Apple Store (*):</label>
+                            <input type="text" class="form-control @error('apple_token') is-invalid @enderror" id="apple_token" name="apple_token" placeholder="ID Apple Store:" value="{{ old('apple_token') }}">
+                            @error('apple_token')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>

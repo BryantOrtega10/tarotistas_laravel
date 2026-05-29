@@ -87,6 +87,12 @@ class LlamadaClienteController extends Controller
                 "llamada_id" => $llamada->id,
                 "accion" => "solicitar",
             ]);
+            Funciones::sendDataOnly($tarotista->user->token_push, [
+                "relacion_id" => $relacion->id,
+                "llamada_id" => $llamada->id,
+                "accion" => "solicitar",
+            ]);
+            
         }
 
         $user = $request->user();

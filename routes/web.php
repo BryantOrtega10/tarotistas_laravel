@@ -141,3 +141,8 @@ Route::group(['prefix' => 'transacciones'], function () {
     Route::post('/webhook-sandbox', [WompiTransactionController::class, 'webhookSandbox'])
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 });
+
+
+Route::get('/terminos', function () {
+    return view('web.terminos');
+});

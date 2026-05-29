@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Cliente\AppsTransactionsController;
 use App\Http\Controllers\Api\Cliente\ChatClienteController;
 use App\Http\Controllers\Api\Cliente\CobrosController;
 use App\Http\Controllers\Api\Cliente\ConsultaTarotistasController;
@@ -144,8 +145,11 @@ Route::group(["prefix" => "cliente"], function () {
         Route::post('/generate-link', [WompiTransactionController::class, 'index']);
     });
 
-     Route::group(["prefix" => "/paquetes", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
+    Route::group(["prefix" => "/paquetes", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
         Route::get('/', [PaquetesController::class, 'index']);
+    });
+    Route::group(["prefix" => "/app-transactions", "middleware" => ["auth:sanctum", "load.cliente"]], function () {
+        Route::post('/', [AppsTransactionsController::class, 'create']);
     });
 });
 
